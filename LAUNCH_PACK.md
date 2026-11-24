@@ -23,7 +23,7 @@ What is actually live right now:
 - Free 10-second raw-HTML audit (international FR/EN/DE/ES, multi-currency, E.164 phones) + deterministic DOM prompt-injection & Unicode steganography guard + parallel Dual-View Anti-Cloaking check (bot vs Chrome UA)
 - Public multi-domain certificate API: https://www.proofxray.com/api/public/v1/certificate?domain=proofxray.com
 - Deterministic SHA-256 Merkle root over extracted entity facts (claimRoot), bounded TTL (7d free snapshot vs 30d continuous monitoring), DNS-01 ownership anchor (_proof-verify TXT), and Ed25519 signatures verifiable offline via https://www.proofxray.com/.well-known/jwks.json
-- Live Ed25519-signed Merkle Transparency Log of all certified root domains: https://www.proofxray.com/.well-known/transparency-log.json
+- Ed25519-signed Merkle snapshot of listed domains (not an append-only log): https://www.proofxray.com/.well-known/transparency-log.json
 - Anti-spoofing SVG badge with SSL-style 7-day expiry countdown (https://www.proofxray.com/api/badge?domain=proofxray.com)
 
 Try it locally with zero dependencies (Node or Python 3):
@@ -34,7 +34,7 @@ Try it locally with zero dependencies (Node or Python 3):
 
 Or connect the zero-dep MCP server directly in Claude Code / Cursor (`node mcp/server.js`).
 
-Would love brutal technical feedback on the scoring invariants, Dual-View anti-cloaking guard, and Ed25519 / Transparency Log schema.
+Would love brutal technical feedback on the scoring invariants, Dual-View anti-cloaking guard, and Ed25519 / signed-snapshot schema.
 
 ---
 
@@ -56,13 +56,13 @@ Open-source MIT spec, zero-dep Node/Python verifiers & MCP server: https://githu
 > 2. Indirect prompt injection hidden in DOM / Unicode tags
 > 3. Bot-vs-human cloaking (fake prices/info shown to AI crawlers)
 >
-> Today we're open-sourcing **PROOF-VC v2** (MIT): deterministic HTML/GEO audits, Dual-View anti-cloaking, live Ed25519 Merkle Transparency Log & zero-dep CLI/MCP verifiers.
+> Today we're open-sourcing **PROOF-VC v2** (MIT): deterministic HTML/GEO audits, Dual-View anti-cloaking, Ed25519-signed Merkle snapshot (not an append-only log) & zero-dep CLI/MCP verifiers.
 
 ### Tweet 2
 > Every audited root homepage gets:
 > - Live public certificate page (`/certifie/<domain>`)
 > - Offline-verifiable Ed25519 attestation (`/.well-known/jwks.json`)
-> - Live signed Merkle Transparency Log (`/.well-known/transparency-log.json`)
+> - Signed Merkle snapshot (not an append-only log) (`/.well-known/transparency-log.json`)
 > - Anti-spoofing SVG badge (`/api/badge?domain=...`)
 > - Zero-dep Node CLI, pure-Python RFC 8032 verifier & MCP server
 >
@@ -77,7 +77,7 @@ Open-source MIT spec, zero-dep Node/Python verifiers & MCP server: https://githu
 > Nous publions aujourd'hui en open-source (licence MIT) le protocole **EAI v1.0 / PROOF-VC v2**, ses vérificateurs CLI (Node + Python pur RFC 8032 sans dépendance) et son serveur **MCP** pour Claude / Cursor :
 > - Audit déterministe en ~10 secondes sur 48 signaux SEO & GEO (ce qui n'est pas mesuré reste indiqué « non mesuré ») ;
 > - Double pare-feu déterministe anti-injection de prompt DOM, anti-stéganographie Unicode et anti-cloaking Dual-View (robot vs navigateur) ;
-> - Certificat public `/certifie/<domaine>` + racine Merkle des faits d'entité + signature asymétrique Ed25519 vérifiable hors-ligne (`/.well-known/jwks.json`) + Transparency Log signé en direct (`/.well-known/transparency-log.json`).
+> - Certificat public `/certifie/<domaine>` + racine Merkle des faits d'entité + signature asymétrique Ed25519 vérifiable hors-ligne (`/.well-known/jwks.json`) + instantané Merkle signé (pas un journal append-only) (`/.well-known/transparency-log.json`).
 >
 > Dépôt open-source : https://github.com/monsieureka/autonomous-enterprise-standard
 > Diagnostic gratuit (10 s, sans inscription) : https://www.proofxray.com/

@@ -1,7 +1,7 @@
 {
   "name": "proof-verify",
   "version": "2.0.0",
-  "description": "Zero-dependency CLI verifier and MCP server for PROOF-VC v2 (Ed25519 JWKS, DNS-01, Transparency Log & EAI v1.0 Standard)",
+  "description": "Zero-dependency CLI verifier and MCP server for PROOF-VC v2 (Ed25519 JWKS, DNS-01, signed Merkle snapshot & EAI v1.0 Standard)",
   "bin": {
     "proof-verify": "./bin/cli.js",
     "proof-mcp": "./mcp/server.js"

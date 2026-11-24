@@ -30,7 +30,7 @@ In the framework designed by **Arthur Mellin**, an **Autonomous International En
 | **Public Certificate Page** | Live root-homepage verified certificate | [`https://www.proofxray.com/certifie/proofxray.com`](https://www.proofxray.com/certifie/proofxray.com) |
 | **PROOF-VC v2 JSON API** | JCS SHA-256 Merkle `claimRoot`, bounded TTL, DOM injection guard & Ed25519 signature | [`/api/public/v1/certificate?domain=proofxray.com`](https://www.proofxray.com/api/public/v1/certificate?domain=proofxray.com) |
 | **Public Ed25519 JWKS** | Offline asymmetric verification keys (RFC 7517) | [`/.well-known/jwks.json`](https://www.proofxray.com/.well-known/jwks.json) |
-| **Transparency Log (STH)** | Live Ed25519-signed Merkle Tree Head of certified domains | [`/.well-known/transparency-log.json`](https://www.proofxray.com/.well-known/transparency-log.json) |
+| **Signed Merkle snapshot** | Ed25519-signed Merkle root over listed domains (a signed snapshot, not an append-only log; it may include expired or alerting domains) | [`/.well-known/transparency-log.json`](https://www.proofxray.com/.well-known/transparency-log.json) |
 | **Zero-Token Stapled VC** | Compact ~100-token signed entity & pricing attestation | [`/.well-known/proof-vc.json`](https://www.proofxray.com/.well-known/proof-vc.json) |
 | **Causal GEO Benchmark** | Anonymized empirical citation uplift with Wilson 95% CI | [`/api/public/v1/benchmark`](https://www.proofxray.com/api/public/v1/benchmark) |
 | **Public Verification Badge** | Real-time Postgres-backed SVG compliance badge | [`/api/badge?domain=proofxray.com`](https://www.proofxray.com/api/badge?domain=proofxray.com) |
@@ -70,7 +70,7 @@ Connect PROOF-VC v2 directly to any MCP client with **zero `npm install`**:
   }
 }
 ```
-Exposes `verify_domain_proof`, `get_transparency_log` (offline Ed25519 STH verification), and `get_causal_geo_benchmark`.
+Exposes `verify_domain_proof`, `get_transparency_log` (offline verification of the snapshot signature), and `get_causal_geo_benchmark`.
 
 ### Live API Query
 ```http

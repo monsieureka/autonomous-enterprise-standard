@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * proof-xray-mcp: Zero-dependency Model Context Protocol (MCP) stdio server for PROOF-VC v2.
- * Exposes offline-verifiable Ed25519 domain certification, live Transparency Log, and Causal GEO Benchmark
+ * Exposes offline-verifiable Ed25519 domain certification, signed Merkle snapshot, and Causal GEO Benchmark
  * directly to Claude Desktop, Claude Code, Cursor, and Antigravity — zero npm install required.
  *
  * Copyright (c) 2026 Arthur Mellin / PROOF X-Ray (https://www.proofxray.com) — MIT License
@@ -105,11 +105,11 @@ const TOOLS = [
   {
     name: 'get_transparency_log',
     description:
-      'Fetch the live PROOF Certificate Transparency Merkle Log (/.well-known/transparency-log.json), verify its Ed25519 Signed Tree Head offline, and optionally look up a specific certified domain.',
+      'Fetch the PROOF signed Merkle snapshot (/.well-known/transparency-log.json; not an append-only log), verify its Ed25519 signature offline, and optionally look up a specific certified domain.',
     inputSchema: {
       type: 'object',
       properties: {
-        domain: { type: 'string', description: 'Optional domain to inspect inside the Merkle Transparency Log' },
+        domain: { type: 'string', description: 'Optional domain to inspect inside the signed Merkle snapshot' },
       },
     },
   },

@@ -25,7 +25,7 @@ Accept: application/json
 To bind a domain's certificate strictly to its verified owner (preventing third-party spoofing), a domain operator publishes a public TXT challenge at `_proof-verify.<domain>`:
 
 ```dns
-_proof-verify.example.com.  300  IN  TXT  "proof-v2=challenge:<24-hex-token>;jwks=https://www.proofxray.com/.well-known/jwks.json;kid=proof-root-2026-01"
+_proof-verify.example.com.  300  IN  TXT  "proof-v2=challenge:<24-hex-token>;jwks=https://www.proofxray.com/.well-known/jwks.json;kid=proof-root-2026-11-24"
 ```
 
 > **Security invariant:** No private key or symmetric HMAC secret is ever placed in DNS. The TXT record only proves DNS zone control (identical to ACME / Let's Encrypt DNS-01).
