@@ -1,6 +1,6 @@
 # Kit de Lancement Vérifié : PROOF X-Ray & Standard EAI / PROOF-VC v2
 
-> **Règle de vérité stricte :** Tous les liens, endpoints et snippets ci-dessous correspondent à du code réellement déployé et vérifié en direct (4/4 vert, zéro dépendance, zéro 404).
+> **Règle de vérité stricte :** Tous les liens, endpoints et snippets ci-dessous correspondent à du code déployé ; les liens et endpoints sont à revérifier avant publication.
 
 ---
 
@@ -14,7 +14,7 @@ Show HN: PROOF-VC v2 – Offline-verifiable Ed25519 web-audit & anti-cloaking sp
 **Text (plain text for HN — paste directly as-is):**
 Hi HN,
 
-I built PROOF X-Ray (https://www.proofxray.com) to audit how websites are actually read by search engines and AI crawlers (raw HTML without JS execution, 48 deterministic signals, zero LLM hallucination — unmeasured signals are explicitly marked unmeasured).
+I built PROOF X-Ray (https://www.proofxray.com) to audit how websites are actually read by search engines and AI crawlers (raw HTML without JS execution, 48 deterministic signals, rule-based scoring — unmeasured signals are explicitly marked unmeasured).
 
 Today I'm open-sourcing the EAI v1.0 / PROOF-VC v2 specification, zero-dependency CLI verifiers (Node.js and pure-Python RFC 8032 Ed25519), and a zero-dependency MCP server under MIT:
 https://github.com/monsieureka/autonomous-enterprise-standard
@@ -24,7 +24,7 @@ What is actually live right now:
 - Public multi-domain certificate API: https://www.proofxray.com/api/public/v1/certificate?domain=proofxray.com
 - Deterministic SHA-256 Merkle root over extracted entity facts (claimRoot), bounded TTL (7d free snapshot vs 30d continuous monitoring), DNS-01 ownership anchor (_proof-verify TXT), and Ed25519 signatures verifiable offline via https://www.proofxray.com/.well-known/jwks.json
 - Ed25519-signed Merkle snapshot of listed domains (not an append-only log): https://www.proofxray.com/.well-known/transparency-log.json
-- Anti-spoofing SVG badge with SSL-style 7-day expiry countdown (https://www.proofxray.com/api/badge?domain=proofxray.com)
+- SVG badge reflecting the last homepage audit, with a 7-day expiry (30 days with active monitoring) (https://www.proofxray.com/api/badge?domain=proofxray.com)
 
 Try it locally with zero dependencies (Node or Python 3):
 
@@ -63,7 +63,7 @@ Open-source MIT spec, zero-dep Node/Python verifiers & MCP server: https://githu
 > - Live public certificate page (`/certifie/<domain>`)
 > - Offline-verifiable Ed25519 attestation (`/.well-known/jwks.json`)
 > - Signed Merkle snapshot (not an append-only log) (`/.well-known/transparency-log.json`)
-> - Anti-spoofing SVG badge (`/api/badge?domain=...`)
+> - SVG badge reflecting the last homepage audit, 7-day expiry (`/api/badge?domain=...`)
 > - Zero-dep Node CLI, pure-Python RFC 8032 verifier & MCP server
 >
 > MIT repo: https://github.com/monsieureka/autonomous-enterprise-standard

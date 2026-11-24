@@ -14,7 +14,7 @@
 
 In the framework designed by **Arthur Mellin**, an **Autonomous International Enterprise (AIE)** — *Entreprise Autonome Internationale (EAI)* — is an organization operated by **1 to 3 humans** that combines:
 
-1. **Deterministic software rules & verifiable protocols** (public HTML auditing, automated payments, zero-hallucination verification).
+1. **Deterministic software rules & verifiable protocols** (public HTML auditing, automated payments, deterministic verification of signed claims).
 2. **AI agents & machine-readable distribution** (`llms.txt`, `llms-full.txt`, W3C `Schema.org` `@graph`, and `/.well-known/agent.json` A2A discovery).
 3. **End-to-end autonomy across at least two countries** on the same core offer, from organic & AI-engine acquisition to automated delivery.
 
@@ -32,8 +32,8 @@ In the framework designed by **Arthur Mellin**, an **Autonomous International En
 | **Public Ed25519 JWKS** | Offline asymmetric verification keys (RFC 7517) | [`/.well-known/jwks.json`](https://www.proofxray.com/.well-known/jwks.json) |
 | **Signed Merkle snapshot** | Ed25519-signed Merkle root over listed domains (a signed snapshot, not an append-only log; it may include expired or alerting domains) | [`/.well-known/transparency-log.json`](https://www.proofxray.com/.well-known/transparency-log.json) |
 | **Zero-Token Stapled VC** | Compact ~100-token signed entity & pricing attestation | [`/.well-known/proof-vc.json`](https://www.proofxray.com/.well-known/proof-vc.json) |
-| **Causal GEO Benchmark** | Anonymized empirical citation uplift with Wilson 95% CI | [`/api/public/v1/benchmark`](https://www.proofxray.com/api/public/v1/benchmark) |
-| **Public Verification Badge** | Real-time Postgres-backed SVG compliance badge | [`/api/badge?domain=proofxray.com`](https://www.proofxray.com/api/badge?domain=proofxray.com) |
+| **GEO Benchmark (experimental)** | Experimental: anonymized benchmark endpoint, no measured sample yet (`sampleSize` 0) | [`/api/public/v1/benchmark`](https://www.proofxray.com/api/public/v1/benchmark) |
+| **Public Verification Badge** | SVG badge reflecting the last homepage audit; valid 7 days after it (30 days with active monitoring) | [`/api/badge?domain=proofxray.com`](https://www.proofxray.com/api/badge?domain=proofxray.com) |
 | **Canonical EAI Page & Press** | Official French canonical page + press kit | [`/entreprise-autonome-internationale`](https://www.proofxray.com/entreprise-autonome-internationale) · [`/presse`](https://www.proofxray.com/presse) |
 | **LLM Routing Index** | High-density machine index + full specification | [`llms.txt`](https://www.proofxray.com/llms.txt) · [`llms-full.txt`](https://www.proofxray.com/llms-full.txt) |
 | **A2A & Security (RFC 9116)** | Agent-to-Agent discovery card + security policy | [`agent.json`](https://www.proofxray.com/.well-known/agent.json) · [`security.txt`](https://www.proofxray.com/.well-known/security.txt) |

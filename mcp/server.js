@@ -116,7 +116,7 @@ const TOOLS = [
   {
     name: 'get_causal_geo_benchmark',
     description:
-      'Fetch the public anonymized Causal GEO Citation Benchmark (/api/public/v1/benchmark) measuring real ChatGPT & Perplexity citation lift with exact Wilson 95% confidence intervals.',
+      'Fetch the public anonymized GEO benchmark endpoint (/api/public/v1/benchmark). Experimental: no measured sample yet (sampleSize 0).',
     inputSchema: { type: 'object', properties: {} },
   },
 ];

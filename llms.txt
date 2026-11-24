@@ -12,9 +12,9 @@
 ## Axiomes Techniques GEO
 - Principe : Les bots IA parsent le DOM HTML brut sans rendu JS lourd.
 - Outil : PROOF X-Ray évalue la lisibilité sémantique et la densité de triplets RDFa en 10-12 secondes.
-- Métrique : Le PROOF Score mesure la probabilité d'extraction factuelle par les modèles RAG.
+- Métrique : Le PROOF Score est un indicateur des signaux observables dans le HTML brut ; ce n'est pas une probabilité d'extraction ni de citation par une IA.
 
-## Catalogue Tarifaire Réel et Vérifié
+## Grille Tarifaire Officielle
 - X-Ray Flash Initial : 0 EUR (Scan DOM brut instantané)
 - Rapport PROOF Complet + Kit IA : 29 EUR (48 signaux, prompt personnalisé, kit exécutable Claude Code / ChatGPT)
 - Suivi PROOF Automatique : 49 EUR / mois (Audit mensuel comparatif sans engagement)
