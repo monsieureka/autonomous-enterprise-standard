@@ -261,12 +261,62 @@ class Verification(unittest.TestCase):
         r_bad_root = self.evaluate(tampered_root_cert, pinned)
         self.assertEqual((r_bad_root["status"], r_bad_root["reason"]), ("UNVERIFIED", "claim_root_mismatch"))
 
-    def test_jcs_rfc8785_cross_language_vector_and_sha256(self):
-        vector = {"z": 1, "a": ["x", {"d": True, "b": None, "c": 94}], "m": "proof-vc-v2"}
-        expected_canonical = '{"a":["x",{"b":null,"c":94,"d":true}],"m":"proof-vc-v2","z":1}'
-        expected_sha256 = "475937ca2de93b0fbbb19018100f6adbd6d76f25742ba3afff56edc1138d6fcf"
+        missing_leaves_cert = certificate(seed, {"claimRoot": computed_root})
+        r_missing = self.evaluate(missing_leaves_cert, pinned)
+        self.assertEqual((r_missing["status"], r_missing["reason"]), ("UNVERIFIED", "missing_claim_leaves"))
+
+        null_leaves_cert = certificate(seed, {"claimRoot": computed_root})
+        null_leaves_cert["claimLeaves"] = None
+        r_null = self.evaluate(null_leaves_cert, pinned)
+        self.assertEqual((r_null["status"], r_null["reason"]), ("UNVERIFIED", "invalid_claim_leaves"))
+
+        null_no_root_cert = certificate(seed)
+        null_no_root_cert["claimLeaves"] = None
+        r_null_no_root = self.evaluate(null_no_root_cert, pinned)
+        self.assertEqual((r_null_no_root["status"], r_null_no_root["reason"]), ("UNVERIFIED", "invalid_claim_leaves"))
+
+    def test_jcs_rfc8785_cross_language_vector_floats_utf16_order_and_non_finite_rejection(self):
+        vector = {
+            "z": 1.0,
+            "negZero": -0.0,
+            "exp": 1e21,
+            "micro": 0.000001,
+            "frac": 333333333.3333333,
+            "\ufb00": "ff",
+            "\U0001f600": "grin",
+            "\u20ac": "euro",
+            "a": ["x", {"d": True, "b": None, "c": 94}],
+            "m": "proof-vc-v2",
+        }
+        expected_canonical = (
+            '{"a":["x",{"b":null,"c":94,"d":true}],"exp":1e+21,"frac":333333333.3333333,"m":"proof-vc-v2",'
+            '"micro":0.000001,"negZero":0,"z":1,"\u20ac":"euro","\U0001f600":"grin","\ufb00":"ff"}'
+        )
+        expected_sha256 = "5407c528fbd9ea23c274ffac0a5c84ca7f23c39c366ef3a78422d8c267481fb9"
         self.assertEqual(pv.canonical_json(vector), expected_canonical)
         self.assertEqual(hashlib.sha256(pv.canonical_json(vector).encode("utf-8")).hexdigest(), expected_sha256)
+        with self.assertRaises(ValueError):
+            pv.canonical_json({"bad": float("nan")})
+        with self.assertRaises(ValueError):
+            pv.canonical_json({"bad": float("inf")})
+
+    def test_rejects_revoked_certificates_revoked_scan_ids_and_revoked_kids(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        c1 = certificate(seed)
+        c1["status"] = "revoked"
+        self.assertEqual(self.evaluate(c1, pinned)["reason"], "certificate_revoked")
+
+        c2 = certificate(seed, {"revoked": True})
+        self.assertEqual(self.evaluate(c2, pinned)["reason"], "certificate_revoked")
+
+        c3 = certificate(seed, {"scanId": "scan-revoked-1"})
+        r3 = pv.evaluate_certificate(c3, DOMAIN, pinned_keys=pinned, now=NOW, fetch=no_network, revoked_scan_ids=["scan-revoked-1"])
+        self.assertEqual(r3["reason"], "certificate_revoked")
+
+        c4 = certificate(seed)
+        r4 = pv.evaluate_certificate(c4, DOMAIN, pinned_keys=pinned, now=NOW, fetch=no_network, revoked_kids=[KID])
+        self.assertEqual(r4["reason"], "key_revoked")
 
 
 class Dns(unittest.TestCase):

@@ -9,8 +9,10 @@ Copyright (c) 2026 Arthur Mellin / PROOF X-Ray (https://www.proofxray.com)
 """
 
 import base64
+from decimal import Decimal
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -22,7 +24,7 @@ import urllib.request
 DOMAIN_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$")
 
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 AUDIT_URL = "https://www.proofxray.com/en#audit-gratuit"
 
 
@@ -63,8 +65,52 @@ def print_help():
     sys.exit(0)
 
 
+def _jcs_number(val) -> str:
+    if isinstance(val, bool):
+        return "true" if val else "false"
+    if isinstance(val, int):
+        return str(val)
+    if not isinstance(val, float) or not math.isfinite(val):
+        raise ValueError("non_finite_number")
+    if val == 0.0:
+        return "0"
+    sign = "-" if val < 0 else ""
+    av = abs(val)
+    d = Decimal(repr(av)).normalize()
+    dt = d.as_tuple()
+    digits = "".join(str(x) for x in dt.digits)
+    exp10 = dt.exponent + len(digits) - 1
+    if -6 <= exp10 < 21:
+        k = len(digits)
+        n = exp10 + 1
+        if k <= n:
+            return sign + digits + ("0" * (n - k))
+        if n > 0:
+            return sign + digits[:n] + "." + digits[n:]
+        return sign + "0." + ("0" * (-n)) + digits
+    mant = digits if len(digits) == 1 else (digits[0] + "." + digits[1:])
+    es = "+" if exp10 >= 0 else "-"
+    return f"{sign}{mant}e{es}{abs(exp10)}"
+
+
 def canonical_json(obj) -> str:
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    """RFC 8785 (JCS) deterministic JSON serializer matching ECMAScript / Node.js canonicalJson:
+    - Object keys sorted lexicographically by UTF-16 code units (UTF-16BE byte order)
+    - Numbers formatted per ECMAScript 7.1.12.1 (1.0 -> '1', -0.0 -> '0', non-finite rejected)"""
+    if obj is None:
+        return "null"
+    if isinstance(obj, bool):
+        return "true" if obj else "false"
+    if isinstance(obj, (int, float)):
+        return _jcs_number(obj)
+    if isinstance(obj, str):
+        return json.dumps(obj, ensure_ascii=False)
+    if isinstance(obj, (list, tuple)):
+        return "[" + ",".join(canonical_json(x) for x in obj) + "]"
+    if isinstance(obj, dict):
+        items = sorted(obj.items(), key=lambda kv: str(kv[0]).encode("utf-16-be"))
+        return "{" + ",".join(f"{json.dumps(str(k), ensure_ascii=False)}:{canonical_json(v)}" for k, v in items) + "}"
+    raise TypeError(f"Unsupported JCS type: {type(obj).__name__}")
 
 
 CLAIM_EMPTY_ROOT_LABEL = "proof-claims-empty-v2"
@@ -299,7 +345,7 @@ def verify_envelope(env, pinned_keys=None, jwks_url=None, fetch=None, force_pure
 
 
 def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url=None, pinned_keys=None,
-                         fetch=None, force_pure=False):
+                         fetch=None, force_pure=False, revoked_kids=None, revoked_scan_ids=None):
     """Decide on a certificate. Everything that decides the outcome comes from the SIGNED payload; unsigned
     top-level fields must agree with it. Returns a dict: status (CERTIFIED | AUDITED | UNVERIFIED), ok, score,
     reason, signature (valid, reason, kid, key_source), payload."""
@@ -321,6 +367,12 @@ def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url
     payload = envelope.get("payload")
     if not isinstance(payload, dict) or payload.get("protocol") != "proof-vc-v2":
         return reject("invalid_payload_protocol")
+    if cert.get("status") == "revoked" or cert.get("revoked") is True or payload.get("revoked") is True:
+        return reject("certificate_revoked")
+    if isinstance(revoked_kids, (list, tuple, set)) and kid in revoked_kids:
+        return reject("key_revoked")
+    if isinstance(revoked_scan_ids, (list, tuple, set)) and isinstance(payload.get("scanId"), str) and payload.get("scanId") in revoked_scan_ids:
+        return reject("certificate_revoked")
     if payload.get("domain") != expected_domain:
         return reject("payload_domain_mismatch")
     if cert.get("domain") != payload.get("domain"):
@@ -347,17 +399,23 @@ def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url
     score = payload.get("score")
     if isinstance(score, bool) or not isinstance(score, (int, float)) or not (0 <= score <= 100):
         return reject("invalid_score")
-    if isinstance(payload.get("claimRoot"), str) and not re.fullmatch(r"[a-fA-F0-9]{64}", payload["claimRoot"]):
-        return reject("invalid_claim_root")
-    if "claimLeaves" in cert and cert.get("claimLeaves") is not None:
+    has_claim_root = "claimRoot" in payload and payload.get("claimRoot") is not None
+    has_claim_leaves_prop = "claimLeaves" in cert
+    if has_claim_root:
         claim_root = payload.get("claimRoot")
         if not isinstance(claim_root, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", claim_root):
             return reject("invalid_claim_root")
+        if not has_claim_leaves_prop:
+            return reject("missing_claim_leaves")
         ok_leaves, computed_root_or_reason, _ = compute_claim_root_from_leaves(cert.get("claimLeaves"))
         if not ok_leaves:
             return reject(computed_root_or_reason)
         if computed_root_or_reason != claim_root.lower():
             return reject("claim_root_mismatch")
+    elif has_claim_leaves_prop:
+        ok_leaves, computed_root_or_reason, _ = compute_claim_root_from_leaves(cert.get("claimLeaves"))
+        if not ok_leaves:
+            return reject(computed_root_or_reason)
     if not (0 <= min_score <= 100):
         return reject("invalid_min_score")
     certified = payload.get("certified") is True and score >= min_score

@@ -229,14 +229,63 @@ test('Merkle claimRoot is reconstructed from claimLeaves (0x00 leaf, 0x01 intern
   const badRoot = await lib.evaluateCertificate(tamperedRootCert, DOMAIN, ctx(key));
   assert.equal(badRoot.status, 'UNVERIFIED');
   assert.equal(badRoot.reason, 'claim_root_mismatch');
+
+  // Mandatory claimLeaves when claimRoot is present -> missing_claim_leaves
+  const missingLeavesCert = certificate(key, { payload: { claimRoot: computed.claimRoot } });
+  const missingRes = await lib.evaluateCertificate(missingLeavesCert, DOMAIN, ctx(key));
+  assert.equal(missingRes.status, 'UNVERIFIED');
+  assert.equal(missingRes.reason, 'missing_claim_leaves');
+
+  // Null claimLeaves -> invalid_claim_leaves (strict Node/Python parity)
+  const nullLeavesCert = certificate(key, { payload: { claimRoot: computed.claimRoot } });
+  nullLeavesCert.claimLeaves = null;
+  const nullRes = await lib.evaluateCertificate(nullLeavesCert, DOMAIN, ctx(key));
+  assert.equal(nullRes.status, 'UNVERIFIED');
+  assert.equal(nullRes.reason, 'invalid_claim_leaves');
+
+  const nullLeavesNoRootCert = certificate(key);
+  nullLeavesNoRootCert.claimLeaves = null;
+  const nullNoRootRes = await lib.evaluateCertificate(nullLeavesNoRootCert, DOMAIN, ctx(key));
+  assert.equal(nullNoRootRes.status, 'UNVERIFIED');
+  assert.equal(nullNoRootRes.reason, 'invalid_claim_leaves');
 });
 
-test('JCS RFC 8785 canonicalJson matches fixed cross-language vector and SHA-256 digest', () => {
-  const vector = { z: 1, a: ['x', { d: true, b: null, c: 94 }], m: 'proof-vc-v2' };
-  const expectedCanonical = '{"a":["x",{"b":null,"c":94,"d":true}],"m":"proof-vc-v2","z":1}';
-  const expectedSha256 = '475937ca2de93b0fbbb19018100f6adbd6d76f25742ba3afff56edc1138d6fcf';
+test('JCS RFC 8785 canonicalJson matches fixed cross-language vector, floats, UTF-16 key order and rejects NaN/Infinity', () => {
+  const vector = {
+    z: 1.0,
+    negZero: -0.0,
+    exp: 1e21,
+    micro: 0.000001,
+    frac: 333333333.3333333,
+    '\ufb00': 'ff',
+    '\ud83d\ude00': 'grin',
+    '\u20ac': 'euro',
+    a: ['x', { d: true, b: null, c: 94 }],
+    m: 'proof-vc-v2',
+  };
+  const expectedCanonical =
+    '{"a":["x",{"b":null,"c":94,"d":true}],"exp":1e+21,"frac":333333333.3333333,"m":"proof-vc-v2","micro":0.000001,"negZero":0,"z":1,"\u20ac":"euro","\ud83d\ude00":"grin","\ufb00":"ff"}';
+  const expectedSha256 = '5407c528fbd9ea23c274ffac0a5c84ca7f23c39c366ef3a78422d8c267481fb9';
   assert.equal(lib.canonicalJson(vector), expectedCanonical);
   assert.equal(crypto.createHash('sha256').update(lib.canonicalJson(vector), 'utf8').digest('hex'), expectedSha256);
+  assert.throws(() => lib.canonicalJson({ bad: Number.NaN }), /non_finite_number/);
+  assert.throws(() => lib.canonicalJson({ bad: Number.POSITIVE_INFINITY }), /non_finite_number/);
+});
+
+test('evaluateCertificate rejects revoked certificates, revoked scanIds and revoked key IDs', async () => {
+  const key = newKey();
+  const c1 = certificate(key);
+  c1.status = 'revoked';
+  assert.equal((await lib.evaluateCertificate(c1, DOMAIN, ctx(key))).reason, 'certificate_revoked');
+
+  const c2 = certificate(key, { payload: { revoked: true } });
+  assert.equal((await lib.evaluateCertificate(c2, DOMAIN, ctx(key))).reason, 'certificate_revoked');
+
+  const c3 = certificate(key, { payload: { scanId: 'scan-revoked-1' } });
+  assert.equal((await lib.evaluateCertificate(c3, DOMAIN, ctx(key, { revokedScanIds: ['scan-revoked-1'] }))).reason, 'certificate_revoked');
+
+  const c4 = certificate(key);
+  assert.equal((await lib.evaluateCertificate(c4, DOMAIN, ctx(key, { revokedKids: [KID] }))).reason, 'key_revoked');
 });
 
 const TOKEN = '318926611b90a11d9392bc21';
