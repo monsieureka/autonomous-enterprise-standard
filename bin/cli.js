@@ -90,8 +90,28 @@ async function runAudit() {
   console.log('\x1b[32m✔ 200 OK\x1b[0m');
   const cert = certRes.data;
 
-  // 2. Signature + decision (signed payload only)
-  const result = await lib.evaluateCertificate(cert, cleanDomain, { minScore, jwksUrl });
+  // 2. Signed revocation list (online, verified against pinned key)
+  const revocations = await lib.fetchAndVerifyRevocations({ jwksUrl });
+  if (revocations.status === 'failed') {
+    console.log(`• Signed Revocations (/.well-known/revocations.json): \x1b[31m✖ FAIL (${revocations.reason})\x1b[0m`);
+    console.log('─────────────────────────────────────────────────────────────────────────────');
+    console.log(`\x1b[1m\x1b[31mFAIL: ${revocations.reason}\x1b[0m`);
+    console.log('\x1b[1m\x1b[31mSTATUS: UNVERIFIED\x1b[0m\n');
+    process.exit(1);
+  }
+  if (revocations.status === 'verified') {
+    console.log(`• Signed Revocations (/.well-known/revocations.json): \x1b[32m✔ VERIFIED\x1b[0m (${revocations.revokedKids.length} revoked keys, ${revocations.revokedScanIds.length} revoked scans)`);
+  } else {
+    console.log(`• Signed Revocations (/.well-known/revocations.json): \x1b[33m○ NOT PUBLISHED YET\x1b[0m`);
+  }
+
+  // 3. Signature + decision (signed payload only)
+  const result = await lib.evaluateCertificate(cert, cleanDomain, {
+    minScore,
+    jwksUrl,
+    revokedKids: revocations.revokedKids,
+    revokedScanIds: revocations.revokedScanIds,
+  });
   const sig = result.signature;
 
   // 3. Informational, non-gating checks

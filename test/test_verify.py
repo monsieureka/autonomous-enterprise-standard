@@ -3,6 +3,7 @@
 Signing uses the repo's own pure-Python Ed25519 primitives (RFC 8032), checked against the RFC test vector.
 """
 import base64
+import copy
 import hashlib
 import importlib.util
 import os
@@ -326,6 +327,45 @@ class Verification(unittest.TestCase):
         c4 = certificate(seed)
         r4 = pv.evaluate_certificate(c4, DOMAIN, pinned_keys=pinned, now=NOW, fetch=no_network, revoked_kids=[KID])
         self.assertEqual(r4["reason"], "key_revoked")
+
+    def test_verify_and_fetch_signed_revocation_list(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        rev_payload = {
+            "protocol": "proof-revocations-v1",
+            "updatedAt": "2026-11-24T00:00:00.000Z",
+            "expiresAt": "2026-11-26T00:00:00.000Z",
+            "revokedKids": ["old-kid"],
+            "revokedScanIds": ["scan-bad"],
+        }
+        rev_env = envelope(rev_payload, seed)
+        ok = pv.verify_revocation_list(rev_env, now=NOW, pinned_keys=pinned, fetch=no_network)
+        self.assertTrue(ok["valid"])
+        self.assertEqual(ok["revoked_kids"], ["old-kid"])
+        self.assertEqual(ok["revoked_scan_ids"], ["scan-bad"])
+
+        tampered = copy.deepcopy(rev_env)
+        tampered["payload"]["revokedKids"] = []
+        bad = pv.verify_revocation_list(tampered, now=NOW, pinned_keys=pinned, fetch=no_network)
+        self.assertFalse(bad["valid"])
+        self.assertEqual(bad["reason"], "digest_mismatch")
+
+        expired = pv.verify_revocation_list(rev_env, now=datetime(2026, 11, 27, tzinfo=timezone.utc), pinned_keys=pinned, fetch=no_network)
+        self.assertFalse(expired["valid"])
+        self.assertEqual(expired["reason"], "revocation_list_expired")
+
+        fetched = pv.fetch_and_verify_revocations(now=NOW, pinned_keys=pinned, fetch=lambda u, a: (200, rev_env))
+        self.assertEqual(fetched["status"], "verified")
+        cert = certificate(seed, {"scanId": "scan-bad"})
+        r_rev = pv.evaluate_certificate(cert, DOMAIN, pinned_keys=pinned, now=NOW, fetch=no_network,
+                                        revoked_kids=fetched["revoked_kids"], revoked_scan_ids=fetched["revoked_scan_ids"])
+        self.assertEqual((r_rev["status"], r_rev["reason"]), ("UNVERIFIED", "certificate_revoked"))
+
+        not_yet = pv.fetch_and_verify_revocations(fetch=lambda u, a: (404, {}))
+        self.assertEqual(not_yet["status"], "not_published")
+
+        req_fail = pv.fetch_and_verify_revocations(require_revocations=True, fetch=lambda u, a: (404, {}))
+        self.assertEqual((req_fail["status"], req_fail["reason"]), ("failed", "revocation_list_unavailable"))
 
 
 class Dns(unittest.TestCase):

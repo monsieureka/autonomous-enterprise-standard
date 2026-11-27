@@ -470,6 +470,75 @@ def check_dns_challenge(domain, dns_challenge, fetch=None):
     return "not_verified", "no TXT record with the expected challenge token"
 
 
+REVOCATIONS_URL = "https://www.proofxray.com/.well-known/revocations.json"
+
+
+def verify_revocation_list(rev_doc, now=None, jwks_url=None, pinned_keys=None, fetch=None, force_pure=False):
+    """Verify an authenticated, Ed25519-signed revocation list envelope (proof-revocations-v1)
+    against the PINNED root key (or explicit jwks_url opt-in), failing closed on tampering or expiry."""
+    valid, reason, kid, source = verify_envelope(
+        rev_doc if isinstance(rev_doc, dict) else None,
+        pinned_keys=pinned_keys, jwks_url=jwks_url, fetch=fetch, force_pure=force_pure,
+    )
+    signature = {"valid": valid, "reason": reason, "kid": kid, "key_source": source}
+
+    def reject(why):
+        return {"valid": False, "reason": why, "revoked_kids": [], "revoked_scan_ids": [], "signature": signature}
+
+    if not valid:
+        return reject(reason)
+    if rev_doc.get("protocol") != "proof-vc-v2":
+        return reject("invalid_revocations_envelope")
+    payload = rev_doc.get("payload")
+    if not isinstance(payload, dict) or payload.get("protocol") != "proof-revocations-v1":
+        return reject("invalid_revocations_protocol")
+    try:
+        expires = datetime.fromisoformat(str(payload.get("expiresAt")).replace("Z", "+00:00"))
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return reject("missing_or_invalid_revocations_expiresAt")
+    if (now or datetime.now(timezone.utc)) > expires:
+        return reject("revocation_list_expired")
+    kids = payload.get("revokedKids")
+    scans = payload.get("revokedScanIds")
+    if not isinstance(kids, list) or not isinstance(scans, list):
+        return reject("invalid_revocations_lists")
+    return {
+        "valid": True,
+        "reason": "ok",
+        "revoked_kids": [k for k in kids if isinstance(k, str) and k],
+        "revoked_scan_ids": [s for s in scans if isinstance(s, str) and s],
+        "expires_at": payload.get("expiresAt"),
+        "updated_at": payload.get("updatedAt"),
+        "signature": signature,
+    }
+
+
+def fetch_and_verify_revocations(revocations_url=None, require_revocations=False, now=None, jwks_url=None,
+                                 pinned_keys=None, fetch=None, force_pure=False):
+    fetch_fn = fetch or fetch_json
+    st, data = fetch_fn(revocations_url or REVOCATIONS_URL, "application/json")
+    if st in (404, 503):
+        if require_revocations:
+            return {"status": "failed", "reason": "revocation_list_unavailable", "revoked_kids": [], "revoked_scan_ids": []}
+        return {"status": "not_published", "reason": f"http_{st}", "revoked_kids": [], "revoked_scan_ids": []}
+    if st != 200 or not isinstance(data, dict):
+        return {"status": "failed", "reason": "revocation_list_fetch_failed", "revoked_kids": [], "revoked_scan_ids": []}
+    checked = verify_revocation_list(
+        data, now=now, jwks_url=jwks_url, pinned_keys=pinned_keys, fetch=fetch, force_pure=force_pure,
+    )
+    if not checked["valid"]:
+        return {"status": "failed", "reason": checked["reason"], "revoked_kids": [], "revoked_scan_ids": []}
+    return {
+        "status": "verified",
+        "reason": "ok",
+        "revoked_kids": checked["revoked_kids"],
+        "revoked_scan_ids": checked["revoked_scan_ids"],
+        "expires_at": checked["expires_at"],
+    }
+
+
 def parse_args(argv):
     """Returns (domain_arg, jwks_url_or_None, error_or_None). Unknown flags are errors."""
     jwks_url = os.environ.get("PROOF_JWKS_URL") or None
@@ -539,8 +608,32 @@ def main():
         sys.exit(1)
     print("✔ 200 OK")
 
-    # 2. Signature + decision (signed payload only)
-    result = evaluate_certificate(cert, raw, min_score=min_score, jwks_url=jwks_url)
+    # 2. Signed revocation list (online, verified against pinned key)
+    rev = fetch_and_verify_revocations(jwks_url=jwks_url)
+    if rev["status"] == "failed":
+        print(f"• Signed Revocations (/.well-known/revocations.json): ✖ FAIL ({rev['reason']})")
+        print("─" * 77)
+        print(f"FAIL: {rev['reason']}")
+        print("STATUS: UNVERIFIED\n")
+        write_github_outputs("UNVERIFIED", "", False)
+        sys.exit(1)
+    if rev["status"] == "verified":
+        print(
+            f"• Signed Revocations (/.well-known/revocations.json): ✔ VERIFIED "
+            f"({len(rev['revoked_kids'])} revoked keys, {len(rev['revoked_scan_ids'])} revoked scans)"
+        )
+    else:
+        print("• Signed Revocations (/.well-known/revocations.json): ○ NOT PUBLISHED YET")
+
+    # 3. Signature + decision (signed payload only)
+    result = evaluate_certificate(
+        cert,
+        raw,
+        min_score=min_score,
+        jwks_url=jwks_url,
+        revoked_kids=rev["revoked_kids"],
+        revoked_scan_ids=rev["revoked_scan_ids"],
+    )
     sig = result["signature"]
 
     # 3. Informational, non-gating checks

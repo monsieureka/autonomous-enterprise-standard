@@ -295,6 +295,54 @@ test('evaluateCertificate rejects revoked certificates, revoked scanIds and revo
   assert.equal((await lib.evaluateCertificate(c4, DOMAIN, ctx(key, { revokedKids: [KID] }))).reason, 'key_revoked');
 });
 
+test('verifyRevocationList and fetchAndVerifyRevocations enforce pinned Ed25519 signature and expiry', async () => {
+  const key = newKey();
+  const revPayload = {
+    protocol: 'proof-revocations-v1',
+    updatedAt: '2026-11-24T00:00:00.000Z',
+    expiresAt: '2026-11-26T00:00:00.000Z',
+    revokedKids: ['old-kid'],
+    revokedScanIds: ['scan-bad'],
+  };
+  const revEnv = envelope(revPayload, key);
+  const ok = await lib.verifyRevocationList(revEnv, ctx(key));
+  assert.equal(ok.valid, true);
+  assert.deepEqual(ok.revokedKids, ['old-kid']);
+  assert.deepEqual(ok.revokedScanIds, ['scan-bad']);
+
+  const tampered = structuredClone(revEnv);
+  tampered.payload.revokedKids = [];
+  const bad = await lib.verifyRevocationList(tampered, ctx(key));
+  assert.equal(bad.valid, false);
+  assert.equal(bad.reason, 'digest_mismatch');
+
+  const expired = await lib.verifyRevocationList(revEnv, ctx(key, { now: new Date('2026-11-27T00:00:00Z') }));
+  assert.equal(expired.valid, false);
+  assert.equal(expired.reason, 'revocation_list_expired');
+
+  const fetched = await lib.fetchAndVerifyRevocations({
+    ...ctx(key),
+    fetchJson: async () => ({ status: 200, data: revEnv }),
+  });
+  assert.equal(fetched.status, 'verified');
+  assert.deepEqual(fetched.revokedScanIds, ['scan-bad']);
+
+  const cert = certificate(key, { payload: { scanId: 'scan-bad' } });
+  const evalRevoked = await lib.evaluateCertificate(cert, DOMAIN, ctx(key, {
+    revokedKids: fetched.revokedKids,
+    revokedScanIds: fetched.revokedScanIds,
+  }));
+  assert.equal(evalRevoked.status, 'UNVERIFIED');
+  assert.equal(evalRevoked.reason, 'certificate_revoked');
+
+  const notYet = await lib.fetchAndVerifyRevocations({ fetchJson: async () => ({ status: 404, data: {} }) });
+  assert.equal(notYet.status, 'not_published');
+
+  const reqFail = await lib.fetchAndVerifyRevocations({ requireRevocations: true, fetchJson: async () => ({ status: 404, data: {} }) });
+  assert.equal(reqFail.status, 'failed');
+  assert.equal(reqFail.reason, 'revocation_list_unavailable');
+});
+
 const TOKEN = '318926611b90a11d9392bc21';
 const challenge = { host: `_proof-verify.${DOMAIN}`, value: `proof-v2=challenge:${TOKEN};jwks=https://x/j;kid=k` };
 const doh = (body, status = 200) => async () => ({ status, data: body });
