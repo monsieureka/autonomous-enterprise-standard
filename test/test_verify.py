@@ -194,6 +194,24 @@ class Verification(unittest.TestCase):
         self.assertFalse(self.evaluate(certificate(seed, {"expiresAt": "garbage"}), pinned)["ok"])
 
 
+    def test_protocol_score_timestamp_and_claim_root_invariants(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        cases = []
+        c = certificate(seed); c["attestation"]["protocol"] = "proof-v1"; cases.append(c)
+        c = certificate(seed); c["attestation"]["payload"]["protocol"] = "proof-v1"; cases.append(c)
+        c = certificate(seed, {"score": 101}); cases.append(c)
+        c = certificate(seed, {"claimRoot": "not-a-sha256"}); cases.append(c)
+        c = certificate(seed, {"auditedAt": "invalid"}); cases.append(c)
+        for cert in cases:
+            payload = cert["attestation"]["payload"]
+            digest = hashlib.sha256(pv.canonical_json(payload).encode()).hexdigest()
+            cert["attestation"]["digest"] = digest
+            cert["attestation"]["signature"]["value"] = b64u(sign(seed, f"proof-vc-v2\\n{digest}".encode()))
+            r = self.evaluate(cert, pinned)
+            self.assertEqual(r["status"], "UNVERIFIED")
+
+
 class Dns(unittest.TestCase):
     CH = {"host": f"_proof-verify.{DOMAIN}", "value": f"proof-v2=challenge:{TOKEN};jwks=https://x/j;kid=k"}
 
