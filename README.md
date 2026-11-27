@@ -1,45 +1,43 @@
-# PROOF-VC v2 — verify a website audit without trusting the vendor
+# The Autonomous International Enterprise (EAI) Standard v1.0
 
-[![PROOF Verified](https://www.proofxray.com/api/badge?domain=proofxray.com)](https://www.proofxray.com/en/certified/proofxray.com)
-[![npm](https://img.shields.io/npm/v/proof-verify)](https://www.npmjs.com/package/proof-verify)
-[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.monsieureka%2Fproof--verify-111312)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.monsieureka/proof-verify)
-[![Glama MCP](https://glama.ai/mcp/servers/monsieureka/autonomous-enterprise-standard/badges/score.svg)](https://glama.ai/mcp/servers/monsieureka/autonomous-enterprise-standard)
-[![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-v1.0.0-111312)](https://github.com/marketplace/actions/proof-autonomous-enterprise-verifier)
+**The Open Cryptographic Standard for AI Agent Trust, Deterministic GEO, and Sovereign Solo-Scale Operations.**
+
+[![PROOF Verified](https://www.proofxray.com/api/badge?domain=proofxray.com)](https://www.proofxray.com/certifie/proofxray.com)
+[![npm version](https://img.shields.io/npm/v/proof-verify)](https://www.npmjs.com/package/proof-verify)
 [![License: MIT](https://img.shields.io/badge/License-MIT-B6FF00.svg)](./LICENSE)
-
-A zero-dependency verifier (Node and Python) and a stdio MCP server for **Ed25519-signed website-audit certificates** issued by [PROOF X-Ray](https://www.proofxray.com/en). It also hosts the open EAI / AIE specification (section 1 below).
+[![RFC 7517](https://img.shields.io/badge/RFC-7517%20(JWK)-111312)](https://www.rfc-editor.org/rfc/rfc7517)
 
 **Disambiguation:** PROOF X-Ray (`proofxray.com`) is deterministic SEO, GEO (Generative Engine Optimization) and AI-visibility website-audit software. It has no connection with medical X-ray equipment, radiology, healthcare imaging, or CERN ROOT/PROOF.
 
-## Verify in 2 seconds
+## Quick start: verify a domain in 2 seconds
+
+No account, no API key, no configuration.
 
 ```bash
 npx proof-verify proofxray.com
 ```
 
-Real output (captured 2026-11-24; the score and dates change with each audit; the three informational checks for DNS-01, `llms.txt` and `agent.json` are omitted here):
+The command fetches the public certificate, checks its Ed25519 signature against a key pinned in the package, and exits with `0` only if the certificate is valid, unexpired, certified and at or above the minimum score. The score changes with each audit; the result is a dated snapshot.
 
-```text
-[PROOF-VC v2] Verifying domain: proofxray.com
-• Querying PROOF Public Certificate API (online)... ✔ 200 OK
-  • Status         : CERTIFIED
-  • Domain         : proofxray.com
-  • PROOF Score    : 93/100 (certified: yes, min required: 80)
-  • Audited At     : 2026-11-24T16:12:49.463Z
-  • Expires At     : 2026-12-01T16:12:49.463Z (snapshot)
-  • Merkle Claims  : 0a333c49a9aaf1d1a9d682477f085f60ef19a0c790c9b833fb1f81694e3cb82a
-  • Ed25519        : VALID — signature verified against pinned key proof-root-2026-11-24; certificate fetched online
+A domain that has not been audited exits with code `1` and a link to the free audit. Prefer Python with no npm? `git clone` this repo, then `python3 bin/proof-verify.py proofxray.com` (pure-Python RFC 8032 Ed25519 fallback, no dependency).
+
+## The official book (physical reference)
+
+***The Autonomous International Enterprise*** by **Arthur Mellin**, founder of PROOF X-Ray. The book sets out the EAI standard in English.
+
+- **Hardcover:** [amazon.com/dp/B0HSXSVJGV](https://www.amazon.com/dp/B0HSXSVJGV) · ASIN `B0HSXSVJGV` · ISBN-13 `9798145890198`
+- **Kindle:** [amazon.com/dp/B0HJM4F6G3](https://www.amazon.com/dp/B0HJM4F6G3) · ASIN `B0HJM4F6G3`
+
+## AI agent integration (official MCP server)
+
+Three lines are enough to give Claude Desktop, Cursor or any MCP client the verifier as tools (`verify_domain_proof`, `get_transparency_log`, `get_causal_geo_benchmark`):
+
+```bash
+claude mcp add proof-verify -- npx -y -p proof-verify proof-mcp
 ```
 
-A domain that has not been audited exits with code `1` and a link to the free audit. A certificate without a valid signature from the pinned key also exits `1` (fail closed).
+For Claude Desktop or Cursor, add to the client configuration:
 
-Prefer Python with no npm? `git clone` this repo, then `python3 bin/proof-verify.py proofxray.com` (pure-Python RFC 8032 Ed25519 fallback, no dependency).
-
-## Use it from an AI client (MCP) in 10 seconds
-
-Published in the official MCP Registry as `io.github.monsieureka/proof-verify`. Run command: `npx -y -p proof-verify proof-mcp`. Tools: `verify_domain_proof`, `get_transparency_log`, `get_causal_geo_benchmark` (experimental, collecting until the `n >= 30` publication threshold).
-
-**Claude Desktop** — add to `claude_desktop_config.json`, then restart the app:
 ```json
 {
   "mcpServers": {
@@ -47,13 +45,22 @@ Published in the official MCP Registry as `io.github.monsieureka/proof-verify`. 
   }
 }
 ```
-**Claude Code:**
-```bash
-claude mcp add proof-verify -- npx -y -p proof-verify proof-mcp
-```
-**Cursor** — the same JSON in `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global).
 
-The server itself was tested through a stdio `initialize` and `tools/list` handshake from the published package. The client configuration snippets follow each client's documented `mcpServers` format and were not run inside the clients themselves.
+The server is published in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.monsieureka/proof-verify) and listed on [Glama](https://glama.ai/mcp/servers/monsieureka/autonomous-enterprise-standard).
+
+## Philosophy and architecture
+
+**The proof before the promise.** Every measurement is deterministic: eight signal categories, read from the public HTML, without executing JavaScript. The same input gives the same result, and the method is published.
+
+- **Offline verification.** Certificates are signed with Ed25519. The public keys are published at [`/.well-known/jwks.json`](https://www.proofxray.com/.well-known/jwks.json) (RFC 7517) and pinned in the CLI, so a signature can be checked without trusting the vendor or the network.
+- **Transparency log.** Issued certificates are recorded in a signed transparency log.
+- **CI integration.** The official GitHub Action, [proof-autonomous-enterprise-verifier](https://github.com/marketplace/actions/proof-autonomous-enterprise-verifier), verifies a certificate in a workflow.
+
+No measurement promises a ranking, a citation by an AI assistant, or a commercial result.
+
+---
+
+## Reference
 
 ## Use it in CI in 10 seconds
 
