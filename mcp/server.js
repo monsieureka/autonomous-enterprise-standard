@@ -92,7 +92,25 @@ async function handleToolCall(name, args = {}) {
       };
     }
     const cert = certRes.data;
-    const result = await lib.evaluateCertificate(cert, domain, VERIFY_OPTS);
+    const revocations = await lib.fetchAndVerifyRevocations(VERIFY_OPTS);
+    if (revocations.status === 'failed') {
+      return {
+        isError: false,
+        data: {
+          domain,
+          status: 'unverified',
+          certified: false,
+          reason: revocations.reason,
+          revocations: { status: 'failed', reason: revocations.reason },
+          ...(KEY_WARNINGS.length ? { warnings: KEY_WARNINGS } : {}),
+        },
+      };
+    }
+    const result = await lib.evaluateCertificate(cert, domain, {
+      ...VERIFY_OPTS,
+      revokedKids: revocations.revokedKids,
+      revokedScanIds: revocations.revokedScanIds,
+    });
     const dns = await lib.checkDnsChallenge(domain, cert.dnsChallenge);
     const signature = {
       valid: result.signature.valid,
@@ -133,6 +151,11 @@ async function handleToolCall(name, args = {}) {
         dnsAnchored: dns.status === 'verified',
         dns,
         claimRoot: p.claimRoot,
+        revocations: {
+          status: revocations.status,
+          revokedKidsCount: revocations.revokedKids.length,
+          revokedScanIdsCount: revocations.revokedScanIds.length,
+        },
         ed25519: signature,
         certificateUrl: cert.certificateUrl,
         badgeUrl: cert.badgeUrl,
