@@ -515,7 +515,7 @@ def verify_revocation_list(rev_doc, now=None, jwks_url=None, pinned_keys=None, f
     }
 
 
-def fetch_and_verify_revocations(revocations_url=None, require_revocations=False, now=None, jwks_url=None,
+def fetch_and_verify_revocations(revocations_url=None, require_revocations=True, now=None, jwks_url=None,
                                  pinned_keys=None, fetch=None, force_pure=False):
     fetch_fn = fetch or fetch_json
     st, data = fetch_fn(revocations_url or REVOCATIONS_URL, "application/json")

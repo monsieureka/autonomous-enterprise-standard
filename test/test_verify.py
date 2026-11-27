@@ -361,11 +361,11 @@ class Verification(unittest.TestCase):
                                         revoked_kids=fetched["revoked_kids"], revoked_scan_ids=fetched["revoked_scan_ids"])
         self.assertEqual((r_rev["status"], r_rev["reason"]), ("UNVERIFIED", "certificate_revoked"))
 
-        not_yet = pv.fetch_and_verify_revocations(fetch=lambda u, a: (404, {}))
-        self.assertEqual(not_yet["status"], "not_published")
+        req_fail_default = pv.fetch_and_verify_revocations(fetch=lambda u, a: (404, {}))
+        self.assertEqual((req_fail_default["status"], req_fail_default["reason"]), ("failed", "revocation_list_unavailable"))
 
-        req_fail = pv.fetch_and_verify_revocations(require_revocations=True, fetch=lambda u, a: (404, {}))
-        self.assertEqual((req_fail["status"], req_fail["reason"]), ("failed", "revocation_list_unavailable"))
+        opt_out = pv.fetch_and_verify_revocations(require_revocations=False, fetch=lambda u, a: (404, {}))
+        self.assertEqual(opt_out["status"], "not_published")
 
 
 class Dns(unittest.TestCase):

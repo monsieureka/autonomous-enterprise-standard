@@ -335,12 +335,12 @@ test('verifyRevocationList and fetchAndVerifyRevocations enforce pinned Ed25519 
   assert.equal(evalRevoked.status, 'UNVERIFIED');
   assert.equal(evalRevoked.reason, 'certificate_revoked');
 
-  const notYet = await lib.fetchAndVerifyRevocations({ fetchJson: async () => ({ status: 404, data: {} }) });
-  assert.equal(notYet.status, 'not_published');
+  const reqFailDefault = await lib.fetchAndVerifyRevocations({ fetchJson: async () => ({ status: 404, data: {} }) });
+  assert.equal(reqFailDefault.status, 'failed');
+  assert.equal(reqFailDefault.reason, 'revocation_list_unavailable');
 
-  const reqFail = await lib.fetchAndVerifyRevocations({ requireRevocations: true, fetchJson: async () => ({ status: 404, data: {} }) });
-  assert.equal(reqFail.status, 'failed');
-  assert.equal(reqFail.reason, 'revocation_list_unavailable');
+  const optOut = await lib.fetchAndVerifyRevocations({ requireRevocations: false, fetchJson: async () => ({ status: 404, data: {} }) });
+  assert.equal(optOut.status, 'not_published');
 });
 
 const TOKEN = '318926611b90a11d9392bc21';
