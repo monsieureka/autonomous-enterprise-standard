@@ -300,6 +300,15 @@ class Verification(unittest.TestCase):
         with self.assertRaises(ValueError):
             pv.canonical_json({"bad": float("inf")})
 
+    def test_jcs_large_json_integers_follow_ecmascript_binary64(self):
+        vector = {"a": 9007199254740993, "b": 100000000000000000000, "c": -9007199254740993}
+        expected = '{"a":9007199254740992,"b":100000000000000000000,"c":-9007199254740992}'
+        self.assertEqual(pv.canonical_json(vector), expected)
+        self.assertEqual(hashlib.sha256(pv.canonical_json(vector).encode("utf-8")).hexdigest(),
+                         hashlib.sha256(expected.encode("utf-8")).hexdigest())
+        with self.assertRaises(ValueError):
+            pv.canonical_json({"huge": 10 ** 400})
+
     def test_rejects_revoked_certificates_revoked_scan_ids_and_revoked_kids(self):
         seed, x = new_key()
         pinned = [{"kid": KID, "x": x}]
