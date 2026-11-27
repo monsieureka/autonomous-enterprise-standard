@@ -22,4 +22,4 @@ jobs:
       - name: Node.js verifier unit tests
         run: node --test test/verify.test.js
       - name: Python verifier unit tests
-        run: python3 -m unittest -v test/test_verify.py
+        run: python3 -m unittest discover -s test -p "test_*.py" -v
