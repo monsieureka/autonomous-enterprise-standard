@@ -272,6 +272,13 @@ test('JCS RFC 8785 canonicalJson matches fixed cross-language vector, floats, UT
   assert.throws(() => lib.canonicalJson({ bad: Number.POSITIVE_INFINITY }), /non_finite_number/);
 });
 
+test('JCS large JSON integers use ECMAScript binary64 representation', () => {
+  const vector = JSON.parse('{"a":9007199254740993,"b":100000000000000000000,"c":-9007199254740993}');
+  const expected = '{"a":9007199254740992,"b":100000000000000000000,"c":-9007199254740992}';
+  assert.equal(lib.canonicalJson(vector), expected);
+  assert.equal(crypto.createHash('sha256').update(lib.canonicalJson(vector)).digest('hex'), crypto.createHash('sha256').update(expected).digest('hex'));
+});
+
 test('evaluateCertificate rejects revoked certificates, revoked scanIds and revoked key IDs', async () => {
   const key = newKey();
   const c1 = certificate(key);
