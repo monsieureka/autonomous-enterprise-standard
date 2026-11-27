@@ -172,6 +172,23 @@ test('signed payload is bound to the requested domain, to unsigned fields, and t
   assert.equal(noExp.ok, false);
 });
 
+test('PROOF-VC v2 rejects protocol confusion, invalid score ranges and invalid claim roots', async () => {
+  const key = newKey();
+  const mutations = [
+    (c) => { c.attestation.protocol = 'proof-v1'; },
+    (c) => { c.attestation.payload.protocol = 'proof-v1'; },
+    (c) => { c.attestation.payload.score = 101; c.score = 101; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
+    (c) => { c.attestation.payload.claimRoot = 'not-a-sha256'; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
+    (c) => { c.attestation.payload.auditedAt = 'invalid'; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
+  ];
+  for (const mutate of mutations) {
+    const cert = certificate(key);
+    mutate(cert);
+    const r = await lib.evaluateCertificate(cert, DOMAIN, ctx(key));
+    assert.equal(r.status, 'UNVERIFIED');
+  }
+});
+
 const TOKEN = '318926611b90a11d9392bc21';
 const challenge = { host: `_proof-verify.${DOMAIN}`, value: `proof-v2=challenge:${TOKEN};jwks=https://x/j;kid=k` };
 const doh = (body, status = 200) => async () => ({ status, data: body });
