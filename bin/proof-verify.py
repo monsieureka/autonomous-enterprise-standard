@@ -69,7 +69,12 @@ def _jcs_number(val) -> str:
     if isinstance(val, bool):
         return "true" if val else "false"
     if isinstance(val, int):
-        return str(val)
+        # JSON numbers are IEEE-754 binary64 in ECMAScript. Python parses them as
+        # arbitrary-precision integers; round to binary64 before JCS formatting.
+        try:
+            val = float(val)
+        except OverflowError as exc:
+            raise ValueError("non_finite_number") from exc
     if not isinstance(val, float) or not math.isfinite(val):
         raise ValueError("non_finite_number")
     if val == 0.0:
@@ -96,7 +101,8 @@ def _jcs_number(val) -> str:
 def canonical_json(obj) -> str:
     """RFC 8785 (JCS) deterministic JSON serializer matching ECMAScript / Node.js canonicalJson:
     - Object keys sorted lexicographically by UTF-16 code units (UTF-16BE byte order)
-    - Numbers formatted per ECMAScript 7.1.12.1 (1.0 -> '1', -0.0 -> '0', non-finite rejected)"""
+    - Numbers rounded to binary64 and formatted per ECMAScript 7.1.12.1
+      (1.0 -> '1', -0.0 -> '0', non-finite rejected)"""
     if obj is None:
         return "null"
     if isinstance(obj, bool):
