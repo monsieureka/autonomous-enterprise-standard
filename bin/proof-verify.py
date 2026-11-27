@@ -279,7 +279,12 @@ def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url
 
     if not valid:
         return reject(reason)
-    payload = cert["attestation"]["payload"]
+    envelope = cert.get("attestation") if isinstance(cert, dict) else None
+    if not isinstance(envelope, dict) or envelope.get("protocol") != "proof-vc-v2":
+        return reject("invalid_attestation_protocol")
+    payload = envelope.get("payload")
+    if not isinstance(payload, dict) or payload.get("protocol") != "proof-vc-v2":
+        return reject("invalid_payload_protocol")
     if payload.get("domain") != expected_domain:
         return reject("payload_domain_mismatch")
     if cert.get("domain") != payload.get("domain"):
@@ -288,17 +293,28 @@ def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url
         return reject("unsigned_score_mismatch")
     if cert.get("certified") != payload.get("certified"):
         return reject("unsigned_certified_mismatch")
+    if not isinstance(payload.get("certified"), bool):
+        return reject("invalid_certified_flag")
     try:
         expires = datetime.fromisoformat(str(payload.get("expiresAt")).replace("Z", "+00:00"))
+        audited = datetime.fromisoformat(str(payload.get("auditedAt")).replace("Z", "+00:00"))
         if expires.tzinfo is None:
             expires = expires.replace(tzinfo=timezone.utc)
-    except ValueError:
-        return reject("missing_or_invalid_expiresAt")
+        if audited.tzinfo is None:
+            audited = audited.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return reject("missing_or_invalid_certificate_timestamp")
+    if audited > expires:
+        return reject("invalid_certificate_interval")
     if (now or datetime.now(timezone.utc)) > expires:
         return reject("certificate_expired")
     score = payload.get("score")
-    if isinstance(score, bool) or not isinstance(score, (int, float)):
+    if isinstance(score, bool) or not isinstance(score, (int, float)) or not (0 <= score <= 100):
         return reject("invalid_score")
+    if isinstance(payload.get("claimRoot"), str) and not re.fullmatch(r"[a-fA-F0-9]{64}", payload["claimRoot"]):
+        return reject("invalid_claim_root")
+    if not (0 <= min_score <= 100):
+        return reject("invalid_min_score")
     certified = payload.get("certified") is True and score >= min_score
     return {
         "status": "CERTIFIED" if certified else "AUDITED",
