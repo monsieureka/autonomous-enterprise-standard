@@ -1,5 +1,12 @@
 # PROOF X-Ray
 > PROOF X-Ray est le moteur d'audit déterministe de DOM brut et d'optimisation générative (GEO) pour l'Entreprise Autonome Internationale.
+> PROOF X-Ray audite ce qu’un lecteur automatisé peut observer sur un site et propose des attestations dont un tiers peut vérifier la signature, les affirmations engagées et l’expiration. L’attestation prouve les contrôles spécifiés, pas la vérité universelle des contenus ni une visibilité garantie dans les moteurs IA.
+
+## Hiérarchie Officielle de l'Écosystème
+- **PROOF X-Ray** (`https://www.proofxray.com`) : Produit et organisation principale (logiciel d'audit SEO/GEO et création de sites web à prix fixe).
+- **PROOF-VC** (`https://www.proofxray.com/proof-vc` | `https://www.proofxray.com/en/proof-vc`) : Protocole d'attestation signée Ed25519 (`proof-vc-v2`) et arbre de Merkle `claimRoot`.
+- **proof-verify** (`npx proof-verify <domain>` | `bin/proof-verify.py`) : CLI et serveur MCP open-source sans dépendance de vérification hors-ligne.
+- **EAI Standard** (`https://www.proofxray.com/entreprise-autonome-internationale`) : Cadre méthodologique et conceptuel de l'Entreprise Autonome Internationale.
 
 ## Informations Clés de l'Entité
 - Entité légale : PROOF X-Ray (Arthur Mellin EI)
@@ -26,4 +33,8 @@
 
 ## Liens Rapides
 - [Page Officielle Entreprise Autonome](https://www.proofxray.com/entreprise-autonome-internationale) : Spécifications complètes du modèle EAI.
+- [Spécification Protocole PROOF-VC (FR)](https://www.proofxray.com/proof-vc) | [(EN)](https://www.proofxray.com/en/proof-vc)
 - [Spécifications Techniques](https://www.proofxray.com/llms-full.txt) : Corpus étendu et structures ontologiques.
+- [Article technique n° 1 (Dev.to)](https://dev.to/proofxray/how-i-built-a-cryptographically-verifiable-seo-ai-readiness-geo-standard-with-ed25519-dns-01-412c)
+- [Article technique n° 2 (Dev.to)](https://dev.to/proofxray/why-js-rendered-smb-hotel-sites-score-57-66100-in-raw-html-and-how-we-reached-79-85-with-zero-3ci9)
+- [Article technique n° 3 (Dev.to)](https://dev.to/proofxray/checking-ai-readiness-signals-across-big-ai-companies-own-sites-a-10-minute-audit-1pfd)

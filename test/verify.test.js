@@ -174,19 +174,69 @@ test('signed payload is bound to the requested domain, to unsigned fields, and t
 
 test('PROOF-VC v2 rejects protocol confusion, invalid score ranges and invalid claim roots', async () => {
   const key = newKey();
-  const mutations = [
-    (c) => { c.attestation.protocol = 'proof-v1'; },
-    (c) => { c.attestation.payload.protocol = 'proof-v1'; },
-    (c) => { c.attestation.payload.score = 101; c.score = 101; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
-    (c) => { c.attestation.payload.claimRoot = 'not-a-sha256'; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
-    (c) => { c.attestation.payload.auditedAt = 'invalid'; c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex'); c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\\n${c.attestation.digest}`), key.privateKey).toString('base64url'); },
+  const resign = (c) => {
+    c.attestation.digest = crypto.createHash('sha256').update(lib.canonicalJson(c.attestation.payload)).digest('hex');
+    c.attestation.signature.value = crypto.sign(null, Buffer.from(`proof-vc-v2\n${c.attestation.digest}`), key.privateKey).toString('base64url');
+  };
+  const cases = [
+    ['invalid_attestation_protocol', (c) => { c.attestation.protocol = 'proof-v1'; }],
+    ['invalid_payload_protocol', (c) => { c.attestation.payload.protocol = 'proof-v1'; resign(c); }],
+    ['invalid_score', (c) => { c.attestation.payload.score = 101; c.score = 101; resign(c); }],
+    ['invalid_claim_root', (c) => { c.attestation.payload.claimRoot = 'not-a-sha256'; resign(c); }],
+    ['missing_or_invalid_auditedAt', (c) => { c.attestation.payload.auditedAt = 'invalid'; resign(c); }],
+    ['invalid_certificate_interval', (c) => { c.attestation.payload.auditedAt = '2026-12-10T00:00:00Z'; resign(c); }],
   ];
-  for (const mutate of mutations) {
+  for (const [expectedReason, mutate] of cases) {
     const cert = certificate(key);
     mutate(cert);
     const r = await lib.evaluateCertificate(cert, DOMAIN, ctx(key));
     assert.equal(r.status, 'UNVERIFIED');
+    assert.equal(r.reason, expectedReason);
   }
+});
+
+test('Merkle claimRoot is reconstructed from claimLeaves (0x00 leaf, 0x01 internal node) and rejects tampered leaves', async () => {
+  const key = newKey();
+  const sha256Hex = (b) => crypto.createHash('sha256').update(b).digest('hex');
+  const rawFacts = [
+    '{"field":"name","normalized":"PROOF X-Ray","source":"jsonld","url":"https://www.proofxray.com/"}',
+    '{"field":"protocol","normalized":"proof-vc-v2","source":"meta","url":"https://www.proofxray.com/proof-vc"}',
+    '{"field":"siret","normalized":"50996962200067","source":"html","url":"https://www.proofxray.com/"}',
+  ];
+  const claimLeaves = rawFacts.map((canonical) => ({
+    canonical,
+    leafHash: sha256Hex(Buffer.concat([Buffer.from([0x00]), Buffer.from(canonical, 'utf8')])),
+  }));
+  const computed = lib.computeClaimRootFromLeaves(claimLeaves);
+  assert.equal(computed.valid, true);
+  assert.equal(computed.leavesCount, 3);
+
+  const cert = certificate(key, { payload: { claimRoot: computed.claimRoot } });
+  cert.claimLeaves = claimLeaves;
+  const okRes = await lib.evaluateCertificate(cert, DOMAIN, ctx(key));
+  assert.equal(okRes.status, 'CERTIFIED');
+
+  // Tamper one leaf's canonical content without updating leafHash -> claim_leaf_hash_mismatch
+  const tamperedLeafCert = certificate(key, { payload: { claimRoot: computed.claimRoot } });
+  tamperedLeafCert.claimLeaves = claimLeaves.map((l, idx) => (idx === 1 ? { ...l, canonical: `${l.canonical} ` } : l));
+  const badLeaf = await lib.evaluateCertificate(tamperedLeafCert, DOMAIN, ctx(key));
+  assert.equal(badLeaf.status, 'UNVERIFIED');
+  assert.equal(badLeaf.reason, 'claim_leaf_hash_mismatch');
+
+  // Valid leafHash but does not match signed claimRoot -> claim_root_mismatch
+  const tamperedRootCert = certificate(key, { payload: { claimRoot: 'a'.repeat(64) } });
+  tamperedRootCert.claimLeaves = claimLeaves;
+  const badRoot = await lib.evaluateCertificate(tamperedRootCert, DOMAIN, ctx(key));
+  assert.equal(badRoot.status, 'UNVERIFIED');
+  assert.equal(badRoot.reason, 'claim_root_mismatch');
+});
+
+test('JCS RFC 8785 canonicalJson matches fixed cross-language vector and SHA-256 digest', () => {
+  const vector = { z: 1, a: ['x', { d: true, b: null, c: 94 }], m: 'proof-vc-v2' };
+  const expectedCanonical = '{"a":["x",{"b":null,"c":94,"d":true}],"m":"proof-vc-v2","z":1}';
+  const expectedSha256 = '475937ca2de93b0fbbb19018100f6adbd6d76f25742ba3afff56edc1138d6fcf';
+  assert.equal(lib.canonicalJson(vector), expectedCanonical);
+  assert.equal(crypto.createHash('sha256').update(lib.canonicalJson(vector), 'utf8').digest('hex'), expectedSha256);
 });
 
 const TOKEN = '318926611b90a11d9392bc21';

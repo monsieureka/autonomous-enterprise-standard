@@ -67,6 +67,42 @@ def canonical_json(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
+CLAIM_EMPTY_ROOT_LABEL = "proof-claims-empty-v2"
+
+
+def compute_claim_root_from_leaves(claim_leaves):
+    """Recompute the Merkle claimRoot from published claimLeaves:
+    - each leaf is { canonical: str, leafHash: hex64 }, with leafHash = SHA-256(0x00 || UTF-8(canonical))
+    - internal nodes are SHA-256(0x01 || leftBytes || rightBytes), odd end-of-level node paired with itself
+    - empty leaf list hashes CLAIM_EMPTY_ROOT_LABEL
+    Returns (True, claim_root, leaves_count) or (False, reason, 0)."""
+    if not isinstance(claim_leaves, list):
+        return False, "invalid_claim_leaves", 0
+    if len(claim_leaves) == 0:
+        empty_root = hashlib.sha256(CLAIM_EMPTY_ROOT_LABEL.encode("utf-8")).hexdigest()
+        return True, empty_root, 0
+    level = []
+    for leaf in claim_leaves:
+        if not isinstance(leaf, dict):
+            return False, "invalid_claim_leaves", 0
+        canonical = leaf.get("canonical")
+        leaf_hash = leaf.get("leafHash")
+        if not isinstance(canonical, str) or not isinstance(leaf_hash, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", leaf_hash):
+            return False, "invalid_claim_leaves", 0
+        expected = hashlib.sha256(b"\x00" + canonical.encode("utf-8")).hexdigest()
+        if expected != leaf_hash.lower():
+            return False, "claim_leaf_hash_mismatch", 0
+        level.append(expected)
+    while len(level) > 1:
+        nxt = []
+        for i in range(0, len(level), 2):
+            left = level[i]
+            right = level[i + 1] if i + 1 < len(level) else left
+            nxt.append(hashlib.sha256(b"\x01" + bytes.fromhex(left) + bytes.fromhex(right)).hexdigest())
+        level = nxt
+    return True, level[0], len(claim_leaves)
+
+
 def write_github_outputs(status: str, score: str, certified: bool):
     out_path = os.environ.get("GITHUB_OUTPUT")
     if not out_path:
@@ -313,6 +349,15 @@ def evaluate_certificate(cert, expected_domain, min_score=80, now=None, jwks_url
         return reject("invalid_score")
     if isinstance(payload.get("claimRoot"), str) and not re.fullmatch(r"[a-fA-F0-9]{64}", payload["claimRoot"]):
         return reject("invalid_claim_root")
+    if "claimLeaves" in cert and cert.get("claimLeaves") is not None:
+        claim_root = payload.get("claimRoot")
+        if not isinstance(claim_root, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", claim_root):
+            return reject("invalid_claim_root")
+        ok_leaves, computed_root_or_reason, _ = compute_claim_root_from_leaves(cert.get("claimLeaves"))
+        if not ok_leaves:
+            return reject(computed_root_or_reason)
+        if computed_root_or_reason != claim_root.lower():
+            return reject("claim_root_mismatch")
     if not (0 <= min_score <= 100):
         return reject("invalid_min_score")
     certified = payload.get("certified") is True and score >= min_score

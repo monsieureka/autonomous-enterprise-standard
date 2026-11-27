@@ -197,19 +197,76 @@ class Verification(unittest.TestCase):
     def test_protocol_score_timestamp_and_claim_root_invariants(self):
         seed, x = new_key()
         pinned = [{"kid": KID, "x": x}]
-        cases = []
-        c = certificate(seed); c["attestation"]["protocol"] = "proof-v1"; cases.append(c)
-        c = certificate(seed); c["attestation"]["payload"]["protocol"] = "proof-v1"; cases.append(c)
-        c = certificate(seed, {"score": 101}); cases.append(c)
-        c = certificate(seed, {"claimRoot": "not-a-sha256"}); cases.append(c)
-        c = certificate(seed, {"auditedAt": "invalid"}); cases.append(c)
-        for cert in cases:
-            payload = cert["attestation"]["payload"]
-            digest = hashlib.sha256(pv.canonical_json(payload).encode()).hexdigest()
-            cert["attestation"]["digest"] = digest
-            cert["attestation"]["signature"]["value"] = b64u(sign(seed, f"proof-vc-v2\\n{digest}".encode()))
+
+        def resign(c):
+            payload = c["attestation"]["payload"]
+            digest = hashlib.sha256(pv.canonical_json(payload).encode("utf-8")).hexdigest()
+            c["attestation"]["digest"] = digest
+            c["attestation"]["signature"]["value"] = b64u(sign(seed, f"proof-vc-v2\n{digest}".encode("utf-8")))
+            return c
+
+        c1 = certificate(seed); c1["attestation"]["protocol"] = "proof-v1"
+        c2 = certificate(seed, {"protocol": "proof-v1"}); resign(c2)
+        c3 = certificate(seed, {"score": 101}, score=101); resign(c3)
+        c4 = certificate(seed, {"claimRoot": "not-a-sha256"}); resign(c4)
+        c5 = certificate(seed, {"auditedAt": "invalid"}); resign(c5)
+        c6 = certificate(seed, {"auditedAt": "2026-12-10T00:00:00Z"}); resign(c6)
+        cases = [
+            ("invalid_attestation_protocol", c1),
+            ("invalid_payload_protocol", c2),
+            ("invalid_score", c3),
+            ("invalid_claim_root", c4),
+            ("missing_or_invalid_certificate_timestamp", c5),
+            ("invalid_certificate_interval", c6),
+        ]
+        for expected_reason, cert in cases:
             r = self.evaluate(cert, pinned)
             self.assertEqual(r["status"], "UNVERIFIED")
+            self.assertEqual(r["reason"], expected_reason)
+
+    def test_merkle_claim_root_reconstructed_from_claim_leaves_and_rejects_tampering(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        raw_facts = [
+            '{"field":"name","normalized":"PROOF X-Ray","source":"jsonld","url":"https://www.proofxray.com/"}',
+            '{"field":"protocol","normalized":"proof-vc-v2","source":"meta","url":"https://www.proofxray.com/proof-vc"}',
+            '{"field":"siret","normalized":"50996962200067","source":"html","url":"https://www.proofxray.com/"}',
+        ]
+        claim_leaves = [
+            {
+                "canonical": canonical,
+                "leafHash": hashlib.sha256(b"\x00" + canonical.encode("utf-8")).hexdigest(),
+            }
+            for canonical in raw_facts
+        ]
+        ok, computed_root, count = pv.compute_claim_root_from_leaves(claim_leaves)
+        self.assertTrue(ok)
+        self.assertEqual(count, 3)
+
+        cert = certificate(seed, {"claimRoot": computed_root})
+        cert["claimLeaves"] = claim_leaves
+        r_ok = self.evaluate(cert, pinned)
+        self.assertEqual(r_ok["status"], "CERTIFIED")
+
+        tampered_leaf_cert = certificate(seed, {"claimRoot": computed_root})
+        tampered_leaf_cert["claimLeaves"] = [
+            {**l, "canonical": l["canonical"] + " "} if i == 1 else l
+            for i, l in enumerate(claim_leaves)
+        ]
+        r_bad_leaf = self.evaluate(tampered_leaf_cert, pinned)
+        self.assertEqual((r_bad_leaf["status"], r_bad_leaf["reason"]), ("UNVERIFIED", "claim_leaf_hash_mismatch"))
+
+        tampered_root_cert = certificate(seed, {"claimRoot": "a" * 64})
+        tampered_root_cert["claimLeaves"] = claim_leaves
+        r_bad_root = self.evaluate(tampered_root_cert, pinned)
+        self.assertEqual((r_bad_root["status"], r_bad_root["reason"]), ("UNVERIFIED", "claim_root_mismatch"))
+
+    def test_jcs_rfc8785_cross_language_vector_and_sha256(self):
+        vector = {"z": 1, "a": ["x", {"d": True, "b": None, "c": 94}], "m": "proof-vc-v2"}
+        expected_canonical = '{"a":["x",{"b":null,"c":94,"d":true}],"m":"proof-vc-v2","z":1}'
+        expected_sha256 = "475937ca2de93b0fbbb19018100f6adbd6d76f25742ba3afff56edc1138d6fcf"
+        self.assertEqual(pv.canonical_json(vector), expected_canonical)
+        self.assertEqual(hashlib.sha256(pv.canonical_json(vector).encode("utf-8")).hexdigest(), expected_sha256)
 
 
 class Dns(unittest.TestCase):

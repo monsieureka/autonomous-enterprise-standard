@@ -45,5 +45,13 @@
     "status": "RFC Draft",
     "txt_record_prefix": "_proof-verify",
     "specification": "https://github.com/monsieureka/autonomous-enterprise-standard/blob/main/schema/dns-handshake.md"
+  },
+  "references": {
+    "proofVcSpecFr": "https://www.proofxray.com/proof-vc",
+    "proofVcSpecEn": "https://www.proofxray.com/en/proof-vc",
+    "devtoProfile": "https://dev.to/proofxray",
+    "devtoArticle": "https://dev.to/proofxray/how-i-built-a-cryptographically-verifiable-seo-ai-readiness-geo-standard-with-ed25519-dns-01-412c",
+    "devtoArticle2": "https://dev.to/proofxray/why-js-rendered-smb-hotel-sites-score-57-66100-in-raw-html-and-how-we-reached-79-85-with-zero-3ci9",
+    "devtoArticle3": "https://dev.to/proofxray/checking-ai-readiness-signals-across-big-ai-companies-own-sites-a-10-minute-audit-1pfd"
   }
 }
