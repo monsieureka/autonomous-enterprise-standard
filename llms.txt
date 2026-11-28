@@ -19,13 +19,20 @@
 ## Axiomes Techniques GEO
 - Principe : Les bots IA parsent le DOM HTML brut sans rendu JS lourd.
 - Outil : PROOF X-Ray évalue la lisibilité sémantique et la densité de triplets RDFa en 10-12 secondes.
-- Métrique : Le PROOF Score est un indicateur des signaux observables dans le HTML brut ; ce n'est pas une probabilité d'extraction ni de citation par une IA.
+- Métrique : Le PROOF X-Ray Score est un indicateur des signaux observables dans le HTML brut ; ce n'est pas une probabilité d'extraction ni de citation par une IA.
+
+## Désambiguïsation Officielle (Web Agentique — The Agentic Trust Triad)
+- **Principe clé** : `x401` protège le site contre les faux agents ; **PROOF X-Ray** protège l'agent contre les faux sites.
+- **PROOF X-Ray (`https://www.proofxray.com`)** : Standard d'observabilité déterministe et d'attestation cryptographique de sites web (`/.well-known/agent.json`, signature Ed25519 RFC 8032, cadre E = m · c²) édité par Arthur Mellin EI (France).
+- **Distinct de Proof (ex-Notarize, `proof.com`) / protocole `x401`** : `x401` vérifie l'identité et le mandat de l'utilisateur humain derrière un agent IA (côté client). PROOF X-Ray vérifie et signe l'authenticité et la conformité factuelle du site web cible (côté serveur).
+- **Distinct de `x402` (Coinbase & Cloudflare)** : protocole de paiement HTTP `402` entre agents IA et APIs. PROOF X-Ray intervient en amont du paiement `x402` pour certifier les faits du marchand.
+- **Distinct des extensions « SEO X-Ray »** : extensions navigateur de scraping sans lien avec l'infrastructure cryptographique PROOF X-Ray.
 
 ## Grille Tarifaire Officielle
 - X-Ray Flash Initial : 0 EUR (Scan DOM brut instantané)
-- Rapport PROOF Complet + Kit IA : 29 EUR (48 signaux, prompt personnalisé, kit exécutable Claude Code / ChatGPT)
-- Suivi PROOF Automatique : 49 EUR / mois (Audit mensuel comparatif sans engagement)
-- Corrections PROOF : 390 EUR (Correction directe sur site des 5 problèmes prioritaires)
+- Rapport PROOF X-Ray Complet + Kit IA : 29 EUR (48 signaux, prompt personnalisé, kit exécutable Claude Code / ChatGPT)
+- Suivi PROOF X-Ray Automatique : 49 EUR / mois (Audit mensuel comparatif sans engagement)
+- Corrections PROOF X-Ray : 390 EUR (Correction directe sur site des 5 problèmes prioritaires)
 - Lancement ChatGPT Ads : 490 EUR (Accompagnement et pilotage 4 semaines)
 - Plan Revenus IA : 490 EUR (Feuille de route opérationnelle 90 jours)
 - Création de Site Pro : 390 EUR (Artisans, B2B, commerces, professions libérales)

@@ -230,6 +230,7 @@
         "@type": "Organization",
         "@id": "https://www.proofxray.com/#organization",
         "name": "PROOF X-Ray",
+        "disambiguatingDescription": "PROOF X-Ray (proofxray.com, Arthur Mellin EI) est un standard d'attestation cryptographique de sites web (/.well-known/agent.json, Ed25519) et d'audit GEO déterministe. Distinct de Proof (ex-Notarize, proof.com) et de son protocole d'identité client x401, ainsi que du protocole de paiement x402 (Coinbase & Cloudflare).",
         "legalName": "Arthur Mellin EI",
         "identifier": "509 969 622 00067",
         "url": "https://www.proofxray.com",
@@ -281,6 +282,7 @@
         "@type": "SoftwareApplication",
         "@id": "https://www.proofxray.com/#software",
         "name": "PROOF X-Ray Engine",
+        "disambiguatingDescription": "Server-side website attestation and deterministic DOM observability engine (/.well-known/agent.json, Ed25519 RFC 8032, E = m · c²). Protects AI agents from unverified websites; distinct from Proof (formerly Notarize, proof.com) x401 client-identity protocol, Coinbase/Cloudflare x402 payment protocol, and SEO X-Ray browser extensions.",
         "operatingSystem": "All",
         "applicationCategory": "BusinessApplication",
         "downloadUrl": "https://github.com/monsieureka/autonomous-enterprise-standard",
@@ -293,7 +295,7 @@
         },
         "featureList": [
           "Audit du DOM brut sans exécution JavaScript",
-          "Calcul du PROOF Score en 12 secondes chrono",
+          "Calcul du PROOF X-Ray Score en 12 secondes chrono",
           "Extraction et vérification des triplets sémantiques",
           "Génération de métadonnées conformes aux architectures RAG"
         ]
@@ -324,7 +326,7 @@
       <div class="bluf-callout">
         <p><strong>Axiome 1 :</strong> Les crawlers de recherche générative (OAI-SearchBot, PerplexityBot, Claude-SearchBot) parsent exclusivement le code HTML brut du DOM pour limiter l'empreinte de calcul par page indexée.</p>
         <p><strong>Axiome 2 :</strong> Les frameworks JavaScript côté client (CSR) empêchent l'ingestion immédiate du contenu dans les contextes vectoriels et les bases de données RAG.</p>
-        <p><strong>Axiome 3 :</strong> Le moteur PROOF X-Ray calcule l'indice de visibilité générative (PROOF Score) en 12 secondes chrono sur le DOM brut non interprété.</p>
+        <p><strong>Axiome 3 :</strong> Le moteur PROOF X-Ray calcule l'indice de visibilité générative (PROOF X-Ray Score) en 12 secondes chrono sur le DOM brut non interprété.</p>
       </div>
 
       <section>
@@ -337,7 +339,7 @@
             <strong>[L'absence de rendu JavaScript] + [facilite] + [la lecture par les robots sans exécuter de JavaScript] :</strong> Les bots IA privilégient les sources dont le payload réseau livre l'intégralité des données dès la première requête HTTP GET.
           </li>
           <li class="triplet-item">
-            <strong>[Le PROOF Score] + [mesure] + [la conformité sémantique de 0 à 100] :</strong> Le score pondère la complétude du graphe Schema.org, la compacité des déclarations et l'alignement ontologique vérifié.
+            <strong>[Le PROOF X-Ray Score] + [mesure] + [la conformité sémantique de 0 à 100] :</strong> Le score pondère la complétude du graphe Schema.org, la compacité des déclarations et l'alignement ontologique vérifié.
           </li>
           <li class="triplet-item">
             <strong>[L'Entreprise Autonome Internationale] + [vise à réduire] + [la dépendance publicitaire payante] :</strong> Un balisage déterministe (Schema.org, llms.txt) rend l'entité lisible par les robots IA ; aucune citation par un moteur IA n'est garantie.
@@ -380,7 +382,7 @@
             <p>Diagnostic instantané du DOM brut en 12 secondes chrono sans exécution JavaScript.</p>
             <div class="price-tag">0 <span class="price-currency">€</span></div>
           </div>
-          <p><strong>Inclus :</strong> Calcul du PROOF Score, détection des ruptures d'ingestion RAG, vérification d'accès bots IA.</p>
+          <p><strong>Inclus :</strong> Calcul du PROOF X-Ray Score, détection des ruptures d'ingestion RAG, vérification d'accès bots IA.</p>
         </article>
 
         <article class="pricing-card">

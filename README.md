@@ -7,7 +7,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-B6FF00.svg)](./LICENSE)
 [![RFC 7517](https://img.shields.io/badge/RFC-7517%20(JWK)-111312)](https://www.rfc-editor.org/rfc/rfc7517)
 
-**Disambiguation:** PROOF X-Ray (`proofxray.com`) is deterministic SEO, GEO (Generative Engine Optimization) and AI-visibility website-audit software. It has no connection with medical X-ray equipment, radiology, healthcare imaging, or CERN ROOT/PROOF.
+**Disambiguation (The Agentic Trust Triad):** **PROOF X-Ray** (`proofxray.com`, `/.well-known/agent.json`, Ed25519 RFC 8032) is deterministic website-attestation, SEO, and GEO (Generative Engine Optimization) software by Arthur Mellin EI. *`x401` protects the website from fake agents; **PROOF X-Ray** protects the agent from fake websites.* It is strictly distinct from:
+- **Proof (formerly Notarize, `proof.com`) & the `x401` protocol** — `x401` verifies the human user's identity and mandate on the **client/agent** side; **PROOF X-Ray** attests the target website's facts and authenticity on the **server/site** side.
+- **`x402` (Coinbase & Cloudflare)** — HTTP `402` machine-to-machine payment protocol; **PROOF X-Ray** certifies merchant facts upstream of payment.
+- **Medical X-ray equipment, radiology, healthcare imaging, CERN ROOT/PROOF, and "SEO X-Ray" browser scraping extensions.**
 
 ## Quick start: verify a domain in 2 seconds
 
