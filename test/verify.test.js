@@ -381,3 +381,75 @@ test('audit guidance for an unverified domain points to the English audit box an
   assert.ok(lines.some((l) => l.includes('npx proof-verify mon-site.example')));
   assert.ok(!lines.join('\n').includes('proofxray.com/#audit-gratuit'));
 });
+
+// --- Strict Merkle leaves (mutation C09, CVE-2012-2459 class) ---------------------------------------------------
+// Issuer rule (site src/lib/xray/entity.ts:56 dedupes on field+normalized+source+url, then
+// src/lib/verified/ed25519.ts:37-45 sorts the canonical strings with the default sort): leaves are strictly increasing.
+const mkLeaves = (n) => Array.from({ length: n }, (_, i) => {
+  const canonical = `{"field":"f${String(i).padStart(3, '0')}","normalized":"v${i}","source":"jsonld","url":"https://www.example.com/"}`;
+  return { canonical, leafHash: crypto.createHash('sha256').update(Buffer.concat([Buffer.from([0x00]), Buffer.from(canonical, 'utf8')])).digest('hex') };
+});
+// Reference Merkle (odd node paired with itself), independent of the strict-order check, to prove the attack premise.
+const rawRoot = (leaves) => {
+  const h = (b) => crypto.createHash('sha256').update(b).digest('hex');
+  let level = leaves.map((l) => l.leafHash);
+  while (level.length > 1) {
+    const next = [];
+    for (let i = 0; i < level.length; i += 2) {
+      next.push(h(Buffer.concat([Buffer.from([1]), Buffer.from(level[i], 'hex'), Buffer.from(level[i + 1] || level[i], 'hex')])));
+    }
+    level = next;
+  }
+  return level[0];
+};
+const certWithLeaves = (key, signedLeaves, publishedLeaves) => {
+  const cert = certificate(key, { payload: { claimRoot: rawRoot(signedLeaves) } });
+  cert.claimLeaves = publishedLeaves;
+  return cert;
+};
+
+test('C09: 52 leaves plus a copy of the last 4 keep the same raw root but are rejected', async () => {
+  const key = newKey();
+  const leaves = mkLeaves(52);
+  const forged = [...leaves, ...leaves.slice(-4)];
+  assert.equal(forged.length, 56);
+  assert.equal(rawRoot(forged), rawRoot(leaves), 'attack premise: duplicated trailing leaves give the same root');
+  assert.equal((await lib.evaluateCertificate(certWithLeaves(key, leaves, leaves), DOMAIN, ctx(key))).status, 'CERTIFIED');
+  const r = await lib.evaluateCertificate(certWithLeaves(key, leaves, forged), DOMAIN, ctx(key));
+  assert.equal(r.status, 'UNVERIFIED');
+  assert.equal(r.reason, 'claim_leaves_not_strictly_sorted');
+});
+
+test('permuted leaves and a duplicate in the middle are rejected; odd and single counts stay valid', async () => {
+  const key = newKey();
+  const leaves = mkLeaves(7);
+  const swapped = [...leaves]; [swapped[2], swapped[3]] = [swapped[3], swapped[2]];
+  const dupMiddle = [...leaves.slice(0, 4), leaves[3], ...leaves.slice(4)];
+  for (const bad of [swapped, dupMiddle, [leaves[0], leaves[0]]]) {
+    const r = await lib.evaluateCertificate(certWithLeaves(key, bad, bad), DOMAIN, ctx(key));
+    assert.equal(r.status, 'UNVERIFIED');
+    assert.equal(r.reason, 'claim_leaves_not_strictly_sorted');
+  }
+  for (const n of [1, 2, 3, 7]) {
+    const ok = mkLeaves(n);
+    assert.equal((await lib.evaluateCertificate(certWithLeaves(key, ok, ok), DOMAIN, ctx(key))).status, 'CERTIFIED', `n=${n}`);
+  }
+});
+
+test('leaf order is UTF-16 code unit order (astral vs U+E000), as the issuer default sort', () => {
+  const mk = (canonical) => ({ canonical, leafHash: crypto.createHash('sha256').update(Buffer.concat([Buffer.from([0x00]), Buffer.from(canonical, 'utf8')])).digest('hex') });
+  const bmp = mk(''); const astral = mk('\u{1F600}'); // UTF-16: astral (D83D...) < U+E000
+  assert.deepEqual(['', '\u{1F600}'].sort(), ['\u{1F600}', '']);
+  assert.equal(lib.computeClaimRootFromLeaves([astral, bmp]).valid, true);
+  assert.equal(lib.computeClaimRootFromLeaves([bmp, astral]).reason, 'claim_leaves_not_strictly_sorted');
+});
+
+test('real proofxray.com certificate (fixture fetched 2026-11-28) is still accepted with the pinned key', async () => {
+  // Fixture expires 2026-12-04: the clock is fixed so the test does not rot; refresh with
+  // curl "https://www.proofxray.com/api/public/v1/certificate?domain=proofxray.com" if the format changes.
+  const cert = JSON.parse(require('node:fs').readFileSync(path.join(__dirname, 'fixtures', 'proofxray.com-certificate-2026-11-28.json'), 'utf8'));
+  assert.equal(cert.claimLeaves.length, 52);
+  const r = await lib.evaluateCertificate(cert, 'proofxray.com', { now: new Date('2026-11-28T12:00:00Z'), fetchJson: noNetwork });
+  assert.equal(r.status, 'CERTIFIED');
+  assert.equal(r.signature.keySource, 'pinned');
+});

@@ -6,6 +6,7 @@ import base64
 import copy
 import hashlib
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -275,6 +276,70 @@ class Verification(unittest.TestCase):
         null_no_root_cert["claimLeaves"] = None
         r_null_no_root = self.evaluate(null_no_root_cert, pinned)
         self.assertEqual((r_null_no_root["status"], r_null_no_root["reason"]), ("UNVERIFIED", "invalid_claim_leaves"))
+
+    # --- Strict Merkle leaves (mutation C09, CVE-2012-2459 class) -----------------------------------------------
+    # Issuer rule (site src/lib/xray/entity.ts:56 dedupes on field+normalized+source+url, then
+    # src/lib/verified/ed25519.ts:37-45 sorts the canonical strings with the default sort): strictly increasing.
+    @staticmethod
+    def _leaves(n):
+        out = []
+        for i in range(n):
+            c = '{"field":"f%03d","normalized":"v%d","source":"jsonld","url":"https://www.example.com/"}' % (i, i)
+            out.append({"canonical": c, "leafHash": hashlib.sha256(b"\x00" + c.encode("utf-8")).hexdigest()})
+        return out
+
+    @staticmethod
+    def _raw_root(leaves):
+        level = [l["leafHash"] for l in leaves]
+        while len(level) > 1:
+            level = [hashlib.sha256(b"\x01" + bytes.fromhex(level[i]) + bytes.fromhex(level[i + 1] if i + 1 < len(level) else level[i])).hexdigest()
+                     for i in range(0, len(level), 2)]
+        return level[0]
+
+    def _cert_with_leaves(self, seed, signed, published):
+        cert = certificate(seed, {"claimRoot": self._raw_root(signed)})
+        cert["claimLeaves"] = published
+        return cert
+
+    def test_c09_duplicated_trailing_leaves_keep_raw_root_but_are_rejected(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        leaves = self._leaves(52)
+        forged = leaves + leaves[-4:]
+        self.assertEqual(len(forged), 56)
+        self.assertEqual(self._raw_root(forged), self._raw_root(leaves))  # attack premise
+        self.assertEqual(self.evaluate(self._cert_with_leaves(seed, leaves, leaves), pinned)["status"], "CERTIFIED")
+        r = self.evaluate(self._cert_with_leaves(seed, leaves, forged), pinned)
+        self.assertEqual((r["status"], r["reason"]), ("UNVERIFIED", "claim_leaves_not_strictly_sorted"))
+
+    def test_permuted_and_middle_duplicate_leaves_rejected_odd_and_single_counts_valid(self):
+        seed, x = new_key()
+        pinned = [{"kid": KID, "x": x}]
+        leaves = self._leaves(7)
+        swapped = list(leaves); swapped[2], swapped[3] = swapped[3], swapped[2]
+        dup_middle = leaves[:4] + [leaves[3]] + leaves[4:]
+        for bad in (swapped, dup_middle, [leaves[0], leaves[0]]):
+            r = self.evaluate(self._cert_with_leaves(seed, bad, bad), pinned)
+            self.assertEqual((r["status"], r["reason"]), ("UNVERIFIED", "claim_leaves_not_strictly_sorted"))
+        for n in (1, 2, 3, 7):
+            ok = self._leaves(n)
+            self.assertEqual(self.evaluate(self._cert_with_leaves(seed, ok, ok), pinned)["status"], "CERTIFIED", n)
+
+    def test_leaf_order_is_utf16_code_unit_order_not_code_point_order(self):
+        def mk(c):
+            return {"canonical": c, "leafHash": hashlib.sha256(b"\x00" + c.encode("utf-8")).hexdigest()}
+        bmp, astral = mk("\ue000"), mk("\U0001F600")  # UTF-16: astral (D83D..) sorts before U+E000; code points say the opposite
+        self.assertTrue(pv.compute_claim_root_from_leaves([astral, bmp])[0])
+        self.assertEqual(pv.compute_claim_root_from_leaves([bmp, astral])[:2], (False, "claim_leaves_not_strictly_sorted"))
+
+    def test_real_proofxray_certificate_fixture_still_accepted_with_pinned_key(self):
+        # Fixture fetched 2026-11-28 (expires 2026-12-04): the clock is fixed so the test does not rot.
+        with open(os.path.join(ROOT, "test", "fixtures", "proofxray.com-certificate-2026-11-28.json"), encoding="utf-8") as fh:
+            cert = json.load(fh)
+        self.assertEqual(len(cert["claimLeaves"]), 52)
+        r = pv.evaluate_certificate(cert, "proofxray.com", pinned_keys=pv.PINNED_KEYS, fetch=no_network,
+                                    now=datetime(2026, 11, 28, 12, tzinfo=timezone.utc))
+        self.assertEqual((r["status"], r["ok"]), ("CERTIFIED", True))
 
     def test_jcs_rfc8785_cross_language_vector_floats_utf16_order_and_non_finite_rejection(self):
         vector = {
