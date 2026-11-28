@@ -39,6 +39,7 @@
 - Pack Restaurant & Hébergement Digital : 590 EUR (Réservation directe sans commission, carte en ligne)
 
 ## Liens Rapides
+- [The Agentic Trust Triad (x401 / x402 / PROOF X-Ray)](https://www.proofxray.com/x401-x402) : Désambiguïsation officielle et ordre d'exécution.
 - [Page Officielle Entreprise Autonome](https://www.proofxray.com/entreprise-autonome-internationale) : Spécifications complètes du modèle EAI.
 - [Spécification Protocole PROOF-VC (FR)](https://www.proofxray.com/proof-vc) | [(EN)](https://www.proofxray.com/en/proof-vc)
 - [Spécifications Techniques](https://www.proofxray.com/llms-full.txt) : Corpus étendu et structures ontologiques.

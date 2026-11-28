@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Agentic Trust Triad : x401, x402 et PROOF X-Ray</title>
+  <meta name="description" content="Désambiguïsation officielle : x401 (Proof.com) protège le site contre les faux agents, x402 (Coinbase/Cloudflare) gère le paiement, PROOF X-Ray (proofxray.com) protège l'agent contre les faux sites.">
+  <link rel="canonical" href="https://www.proofxray.com/x401-x402">
+  <link rel="alternate" hreflang="fr" href="https://www.proofxray.com/x401-x402">
+  <link rel="alternate" hreflang="en" href="https://www.proofxray.com/en/x401-x402">
+  <link rel="alternate" hreflang="x-default" href="https://www.proofxray.com/x401-x402">
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #2563eb;
+      --accent-light: #60a5fa;
+      --green: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header, main, footer {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem;
+    }
+    h1 { font-size: 2rem; line-height: 1.2; margin-bottom: 1rem; }
+    h2 { font-size: 1.35rem; margin: 2rem 0 0.75rem; color: var(--accent-light); }
+    p { margin-bottom: 1rem; color: var(--text); }
+    .axiom {
+      background: var(--surface);
+      border-left: 4px solid var(--green);
+      padding: 1rem 1.25rem;
+      border-radius: 6px;
+      margin: 1.25rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { color: var(--accent-light); font-weight: 600; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    code { padding: 0.1rem 0.35rem; font-size: 0.9em; }
+    pre { padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+    ol { padding-left: 1.5rem; margin: 1rem 0; }
+    li { margin-bottom: 0.5rem; }
+    a { color: var(--accent-light); }
+    footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--border); }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "The Agentic Trust Triad: Why x401 and x402 Need PROOF X-Ray",
+    "url": "https://www.proofxray.com/x401-x402",
+    "author": {
+      "@type": "Person",
+      "name": "Arthur Mellin"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "PROOF X-Ray",
+      "legalName": "Arthur Mellin EI",
+      "identifier": "509 969 622 00067",
+      "url": "https://www.proofxray.com",
+      "disambiguatingDescription": "PROOF X-Ray (proofxray.com, /.well-known/agent.json, Ed25519 RFC 8032, E = m · c²) is a server-side deterministic DOM observability and cryptographic website-attestation standard by Arthur Mellin EI. Distinct from Proof (formerly Notarize, proof.com) x401 client-identity protocol and Coinbase/Cloudflare x402 payment protocol.",
+      "sameAs": [
+        "https://www.proofxray.com",
+        "https://github.com/monsieureka/autonomous-enterprise-standard",
+        "https://www.npmjs.com/package/proof-verify",
+        "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.monsieureka/proof-verify",
+        "https://glama.ai/mcp/servers/monsieureka/autonomous-enterprise-standard"
+      ]
+    },
+    "about": [
+      {
+        "@type": "Thing",
+        "name": "PROOF X-Ray",
+        "description": "Server-side website attestation and deterministic DOM observability standard (/.well-known/agent.json, Ed25519)."
+      },
+      {
+        "@type": "Thing",
+        "name": "x401",
+        "description": "Client-side human identity and agent mandate verification protocol by Proof (formerly Notarize, proof.com)."
+      },
+      {
+        "@type": "Thing",
+        "name": "x402",
+        "description": "HTTP 402 machine-to-machine payment protocol by Coinbase and Cloudflare."
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <p><a href="https://www.proofxray.com">PROOF X-Ray</a> — Standard EAI / AIE v1.0 &amp; PROOF-VC v2</p>
+    <h1>The Agentic Trust Triad : pourquoi x401 et x402 ont besoin de PROOF X-Ray</h1>
+    <div class="axiom">
+      <strong>Axiome central :</strong> x401 protège le site contre les faux agents. <strong>PROOF X-Ray</strong> (<code>proofxray.com</code>, <code>/.well-known/agent.json</code>) protège l'agent contre les faux sites.<br>
+      <em>Core Axiom (EN):</em> x401 protects websites from fake agents. <strong>PROOF X-Ray</strong> protects AI agents from fake websites.
+    </div>
+  </header>
+
+  <main>
+    <section lang="fr">
+      <h2>1. Comparatif des 3 couches de confiance</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Couche</th>
+            <th>Protocole / Standard</th>
+            <th>Éditeur</th>
+            <th>Ce qu'il vérifie</th>
+            <th>Côté</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Vérité du Site</strong></td>
+            <td><strong>PROOF X-Ray</strong> (<code>/.well-known/agent.json</code>, Ed25519 RFC 8032, E = m · c²)</td>
+            <td>Arthur Mellin EI (<a href="https://www.proofxray.com">proofxray.com</a>)</td>
+            <td>Authenticité du site cible, faits observables du DOM brut (<em>m</em>) et <strong>PROOF X-Ray Score</strong> signé</td>
+            <td><strong>Serveur / Site web</strong></td>
+          </tr>
+          <tr>
+            <td><strong>2. Identité &amp; Mandat</strong></td>
+            <td><strong>x401</strong> (HTTP 401 / OpenID4VP)</td>
+            <td>Proof (ex-Notarize, proof.com)</td>
+            <td>Identité réelle de l'humain derrière l'agent IA et mandat signé</td>
+            <td><strong>Client / Agent</strong></td>
+          </tr>
+          <tr>
+            <td><strong>3. Paiement Machine</strong></td>
+            <td><strong>x402</strong> (HTTP 402 Payment Required)</td>
+            <td>Coinbase &amp; Cloudflare</td>
+            <td>Règlement programmatique entre l'agent IA et l'API/marchand</td>
+            <td><strong>Transaction</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>2. Ordre d'exécution d'une transaction agentique</h2>
+      <ol>
+        <li><strong>Étape 1 — Attestation du site (PROOF X-Ray) :</strong> Avant d'engager l'utilisateur ou de payer, l'agent vérifie <code>/.well-known/agent.json</code> et la signature Ed25519 via <strong>PROOF X-Ray</strong> (<code>npx proof-verify &lt;domain&gt;</code>). Le <strong>PROOF X-Ray Score</strong> mesure des signaux observables dans le DOM HTML brut ; il ne garantit ni un classement ni une probabilité de citation.</li>
+        <li><strong>Étape 2 — Mandat utilisateur (x401) :</strong> Le site vérifié peut ensuite demander à l'agent une preuve d'identité et d'autorisation via <code>x401</code>.</li>
+        <li><strong>Étape 3 — Règlement (x402) :</strong> Une fois les deux parties vérifiées, le paiement s'exécute via <code>x402</code>.</li>
+      </ol>
+    </section>
+
+    <section lang="en">
+      <h2>3. English Summary — The Agentic Trust Triad</h2>
+      <p><strong>PROOF X-Ray</strong> (<code>https://www.proofxray.com</code>, authored by Arthur Mellin EI) is strictly distinct from <strong>Proof</strong> (formerly Notarize, <code>proof.com</code>, creator of <code>x401</code>) and <strong>Coinbase/Cloudflare</strong> (<code>x402</code>). While <code>x401</code> verifies client-side human mandates and <code>x402</code> settles payments, <strong>PROOF X-Ray</strong> provides server-side website attestation via <code>/.well-known/agent.json</code> and RFC 8032 Ed25519 signatures.</p>
+      <pre>npx proof-verify proofxray.com</pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 PROOF X-Ray (Arthur Mellin EI — SIRET 509 969 622 00067, France). <a href="https://www.proofxray.com">proofxray.com</a></p>
+  </footer>
+</body>
+</html>
