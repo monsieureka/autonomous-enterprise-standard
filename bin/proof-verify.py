@@ -24,7 +24,7 @@ import urllib.request
 DOMAIN_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$")
 
 
-VERSION = "1.0.2"
+VERSION = "1.1.5"
 AUDIT_URL = "https://www.proofxray.com/en#audit-gratuit"
 
 
