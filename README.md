@@ -65,7 +65,7 @@ No measurement promises a ranking, a citation by an AI assistant, or a commercia
 ## Use it in CI in 10 seconds
 
 ```yaml
-- uses: monsieureka/autonomous-enterprise-standard@v1.1.4
+- uses: monsieureka/autonomous-enterprise-standard@v1.1.5
   with:
     domain: example.com
     min_score: '80'
