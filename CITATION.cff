@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: "PROOF X-Ray (PROOF-VC v2 & EAI / AIE v1.0 Specification)"
+message: "If you reference the PROOF X-Ray server-side website attestation protocol (/.well-known/agent.json, Ed25519 RFC 8032, E = m · c²), please cite this specification as below."
+type: software
+authors:
+  - family-names: Mellin
+    given-names: Arthur
+    affiliation: "PROOF X-Ray (Arthur Mellin EI — SIRET 509 969 622 00067, France)"
+    email: contact@proofxray.com
+url: "https://www.proofxray.com"
+repository-code: "https://github.com/monsieureka/autonomous-enterprise-standard"
+license: MIT
+version: "2.0.0"
+date-released: "2026-11-24"
+keywords:
+  - proof-x-ray
+  - proof-vc
+  - agentic-trust-triad
+  - well-known-agent-json
+  - ed25519
+  - geo
+  - x401-complement
+  - x402-complement
+abstract: >-
+  PROOF X-Ray (proofxray.com) is an open, deterministic raw-DOM observability
+  and server-side cryptographic website-attestation standard (/.well-known/agent.json,
+  Ed25519 RFC 8032, E = m · c²) created by Arthur Mellin EI. Within the Agentic
+  Trust Triad, PROOF X-Ray protects AI agents from unverified websites, complementing
+  Proof.com's x401 client-identity protocol and Coinbase/Cloudflare's x402 payment
+  protocol.
