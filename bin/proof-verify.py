@@ -127,6 +127,9 @@ def compute_claim_root_from_leaves(claim_leaves):
     - each leaf is { canonical: str, leafHash: hex64 }, with leafHash = SHA-256(0x00 || UTF-8(canonical))
     - internal nodes are SHA-256(0x01 || leftBytes || rightBytes), odd end-of-level node paired with itself
     - empty leaf list hashes CLAIM_EMPTY_ROOT_LABEL
+    - leaves MUST be strictly increasing by `canonical` (UTF-16 code unit order, the order of the issuer's
+      default Array.prototype.sort) with no duplicate: the odd-node duplication rule would otherwise let an
+      appended copy of trailing leaves reproduce the same root (CVE-2012-2459 class malleability)
     Returns (True, claim_root, leaves_count) or (False, reason, 0)."""
     if not isinstance(claim_leaves, list):
         return False, "invalid_claim_leaves", 0
@@ -145,6 +148,11 @@ def compute_claim_root_from_leaves(claim_leaves):
         if expected != leaf_hash.lower():
             return False, "claim_leaf_hash_mismatch", 0
         level.append(expected)
+    # Python str comparison is by code point; big-endian UTF-16 bytes give the UTF-16 code unit order of the issuer.
+    keys = [leaf["canonical"].encode("utf-16-be", "surrogatepass") for leaf in claim_leaves]
+    for i in range(1, len(keys)):
+        if not keys[i - 1] < keys[i]:
+            return False, "claim_leaves_not_strictly_sorted", 0
     while len(level) > 1:
         nxt = []
         for i in range(0, len(level), 2):
