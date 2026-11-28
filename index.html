@@ -429,6 +429,16 @@
         <dd>Email : <a href="mailto:contact@proofxray.com">contact@proofxray.com</a> | Téléphone : <a href="tel:+33743727571">+33 7 43 72 75 71</a></dd>
       </dl>
     </section>
+    <section id="triade-agentique">
+      <h2>La Triade de Confiance Agentique (x401 / x402 / PROOF X-Ray)</h2>
+      <p><strong>x401 protège le site contre les faux agents. PROOF X-Ray (<code>proofxray.com</code>, <code>/.well-known/agent.json</code>) protège l'agent contre les faux sites.</strong></p>
+      <ul>
+        <li><strong>1. PROOF X-Ray (Arthur Mellin EI)</strong> — Côté <em>serveur / site web</em> : attestation cryptographique Ed25519 (RFC 8032) des faits observables du DOM brut (<em>m</em>) et du PROOF X-Ray Score.</li>
+        <li><strong>2. x401 (Proof / ex-Notarize, <code>proof.com</code>)</strong> — Côté <em>client / agent</em> : vérification de l'identité humaine et du mandat d'autorisation.</li>
+        <li><strong>3. x402 (Coinbase &amp; Cloudflare)</strong> — Couche <em>transaction</em> : règlement HTTP 402 entre agents IA et APIs.</li>
+      </ul>
+      <p><a href="https://www.proofxray.com/x401-x402">Voir la spécification comparative complète x401 / x402 / PROOF X-Ray &rarr;</a></p>
+    </section>
   </main>
 
   <footer>
@@ -439,7 +449,7 @@
     </div>
     <p>&copy; 2026 PROOF X-Ray (Arthur Mellin EI - SIRET 509 969 622 00067). Tous droits réservés.</p>
     <p>Architecture GEO déterministe pour l'Entreprise Autonome Internationale | 16, rue de la République, 95270 Chaumontel, France.</p>
-    <p><a href="https://www.proofxray.com/llms.txt">Fichier llms.txt d'autorité</a> | <a href="https://www.proofxray.com/robots.txt">robots.txt officiel</a></p>
+    <p><a href="https://www.proofxray.com/x401-x402">Triade x401 / x402 / PROOF X-Ray</a> | <a href="https://www.proofxray.com/llms.txt">Fichier llms.txt d'autorité</a> | <a href="https://www.proofxray.com/robots.txt">robots.txt officiel</a></p>
   </footer>
 
 </body>
